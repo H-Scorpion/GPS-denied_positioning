@@ -3,9 +3,9 @@ import threading
 import serial
 import collections
 import time
-from calGps import calGps
+# from calGps import calGps
 # from ubx import UBXManager
-from readGps import readGps
+from mqtt_sub import readGps
 
 relPos = collections.deque(maxlen=1)
 refGps = collections.deque(maxlen=1)
