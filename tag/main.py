@@ -3,6 +3,8 @@ import threading
 import serial
 import collections
 import time
+import joblib
+import os
 # from calGps import calGps
 # from ubx import UBXManager
 from mqtt_sub import readGps
@@ -16,7 +18,7 @@ relPos.append(
 )
 
 refGps.append(
-    (0, 0, 0)  # (lat, lon, heith)
+    (25.018130, 121.545107, 0)  # (lat, lon, heith)
 )
 
 
@@ -29,9 +31,21 @@ def calRealPos(offset, pvt_obj):
     return real_pos_obj
 
 
+def readFixGps(gpsQue):
+    templatePath = os.path.dirname(__file__)+'/template/'
+    pvt_obj = joblib.load(templatePath + 'NAV-PVT_template.pkl')
+    pvt_obj.lat = int(gpsQue[0][0]*10**7)
+    pvt_obj.lon = int(gpsQue[0][1]*10**7)
+    pvt_obj.height = int(gpsQue[0][2]*10**7)
+    # print(pvt_obj)
+    gpsQue.append(gpsQue)
+
+
 if __name__ == '__main__':
+    # th_gps = threading.Thread(
+    #     target=readGps, args=[refGps], daemon=True)
     th_gps = threading.Thread(
-        target=readGps, args=[refGps], daemon=True)
+        target=readFixGps, args=[refGps], daemon=True)
     th_uwb = threading.Thread(target=readUwb, daemon=True)
     th_gps.start()
     th_uwb.start()
@@ -46,7 +60,7 @@ if __name__ == '__main__':
             duration = t - start_time
 
             pvt_obj = refGps[0]
-            # print(duration,pvt_obj)
+            print(duration,pvt_obj)
             offset = relPos[0]
             real_pos_obj = calRealPos(offset, pvt_obj)
 
