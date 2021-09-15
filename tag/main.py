@@ -14,6 +14,7 @@ refGps = collections.deque(maxlen=1)
 relPos.append(
     (0, 0, 0)  # (e, n, u)
 )
+
 refGps.append(
     (0, 0, 0)  # (lat, lon, heith)
 )
@@ -21,6 +22,11 @@ refGps.append(
 
 def readUwb():
     pass
+
+
+def calRealPos(offset, pvt_obj):
+    real_pos_obj = pvt_obj  # default
+    return real_pos_obj
 
 
 if __name__ == '__main__':
@@ -38,8 +44,12 @@ if __name__ == '__main__':
         if t - last_time > 0.2:
             last_time = t
             duration = t - start_time
+
             pvt_obj = refGps[0]
-            print(duration,pvt_obj)
+            # print(duration,pvt_obj)
+            offset = relPos[0]
+            real_pos_obj = calRealPos(offset, pvt_obj)
+
             # do something
             # calc_position(lon, lat, d0, d1, d2, d3)
         else:

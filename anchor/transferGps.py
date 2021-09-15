@@ -29,7 +29,7 @@ def readGps(mqtt_client):
     manager.onUBXError = my_onUBXError    
     
     manager.start()
-    print('hi')
+    print('manager started...')
 
     try:
         while True:
@@ -37,8 +37,9 @@ def readGps(mqtt_client):
     except KeyboardInterrupt:
         print('KeyboardInterrupt')
     finally:
-        print('manager.shutdown()')
         manager.shutdown()
+        print('manager.shutdown()')
+        
 
 # readGps('COM16')
 
