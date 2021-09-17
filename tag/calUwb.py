@@ -73,7 +73,6 @@ class UWBSimulate():
         self.is_run = threading.Event()
         self.distanceData = [0,0,0,0]
         self.anchor_gps = anchor_gps
-        print('init, self',self.anchor_gps)
         self.anchorPosition_enu = []
         self.offsetQ = offsetQ
         with open(filename,'r') as f:  #os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json'
@@ -93,7 +92,7 @@ class UWBSimulate():
         self.anchorPosition_enu = anchorPosition_enu
 
     def uwbReplay(self):
-        print('uwbReplay, self',self.anchor_gps)
+        # print('uwbReplay, self',self.anchor_gps)
         # print(self.anchor_gps)
         self.metadata_initialize(self.anchor_gps)
         start_time = time.time()
@@ -166,27 +165,6 @@ def readUwb():
         print('finish dumping ubx json data.')
 
 
-def uwbSimulate(onUwb):
-    with open(os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json','r') as f:
-        allUwb = json.load(f)
-    start_time = time.time()
-
-    def _onUwb(uwb):
-        print(uwb)
-        print('_onUWB')
-
-    for uwb in allUwb:
-        # print(uwb)
-        timestamp = float(uwb['time'])
-        while time.time()-start_time < timestamp:
-            time.sleep(0.01)
-        try:
-            onUwb(uwb)
-        except Exception as e:
-            print(e)
-            _onUwb(uwb)
-            
-        
 
 # def calOffset(offsetQ,anchorPosition_enu):
 #     def myonUwb(uwb):
@@ -197,14 +175,7 @@ def uwbSimulate(onUwb):
 #         offsetQ.append(offset)
 #     uwbSimulate(myonUwb)
 
-def calOffset(offsetQ,anchorPosition_enu):
-    def myonUwb(uwb):
-        dis = [i/1000 for i in uwb['dis']]  #and i != 0 and i !=4
-        # print(dis)
-        offset = costfun_method(dis[:4],anchorPosition_enu)
-        print(offset)
-        offsetQ.append(offset)
-    uwbSimulate(myonUwb)
+
     
 if __name__=='__main__':
     uwbmanager = UWBSimulate(os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json')
