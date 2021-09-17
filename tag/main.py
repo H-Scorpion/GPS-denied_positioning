@@ -2,6 +2,7 @@ import threading
 # import concurrent.futures
 import serial
 import collections
+import copy
 import time
 import joblib
 import os
@@ -13,6 +14,7 @@ from calUwb import UWBSimulate
 
 
 relPos = collections.deque(maxlen=1)
+anc_gps_q = collections.deque(maxlen=1)
 refGps = collections.deque(maxlen=1)
 
 anchor_gps = [(25.02097, 121.54332, 0), (25.02208, 121.5346, 0), (
@@ -22,10 +24,12 @@ relPos.append(
     (0, 0, 0)  # (e, n, u)
 )
 
-refGps.append(
-    anchor_gps[0]
+anc_gps_q.append(
+    copy.deepcopy(anchor_gps)
     # (lat, lon, heith)
 )
+
+refGps.append(anchor_gps[0])
 
 # a0:25.017808099461927, 121.54450303082434
 # a1:25.01798327478762, 121.54427409377229
@@ -49,32 +53,50 @@ def calRealPos(offset, pvt_obj):
     return real_pos_obj
 
 
+# def readFixGps(gpsQue):
+#     templatePath = os.path.dirname(__file__)+'/template/'
+#     anchor_list = gpsQue[0]
+#     for i in range(4):
+#         pvt_obj = joblib.load(templatePath + 'NAV-PVT_template.pkl')
+#         pvt_obj.lat = int(gpsQue[0][i][0]*10**7)
+#         pvt_obj.lon = int(gpsQue[0][i][1]*10**7)
+#         pvt_obj.height = int(gpsQue[0][i][2]*10**7)
+#         anchor_list[i] = pvt_obj
+#     # print(pvt_obj)    
+    
+#     gpsQue.append(anchor_list)
+
+
 def readFixGps(gpsQue):
     templatePath = os.path.dirname(__file__)+'/template/'
     pvt_obj = joblib.load(templatePath + 'NAV-PVT_template.pkl')
     pvt_obj.lat = int(gpsQue[0][0]*10**7)
     pvt_obj.lon = int(gpsQue[0][1]*10**7)
     pvt_obj.height = int(gpsQue[0][2]*10**7)
-    # print(pvt_obj)
+    # anchor_list[i] = pvt_obj
+    # print(pvt_obj)        
     gpsQue.append(pvt_obj)
-
 
 if __name__ == '__main__':
     # th_gps = threading.Thread(
-    #     target=readGps, args=[refGps], daemon=True)
+    #     target=readGps, args=[anc_gps_q], daemon=True)
     th_gps = threading.Thread(
         target=readFixGps, args=[refGps], daemon=True)
     th_gps.start()
+    print(anchor_gps)
     uwbManager = UWBSimulate(relPos, os.path.dirname(
         __file__)+'/uwbData/UWB_dis_18_49_17.json', anchor_gps)
     uwbManager.start()
     time.sleep(1)
 
+    # while True:
+    #     time.sleep(1.)
+
     start_time = time.time()
     last_time = time.time()
     while True:
         t = time.time()
-        if t - last_time > 0.2:
+        if t - last_time > 1:
             last_time = t
             duration = t - start_time
 

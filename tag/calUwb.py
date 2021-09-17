@@ -73,6 +73,7 @@ class UWBSimulate():
         self.is_run = threading.Event()
         self.distanceData = [0,0,0,0]
         self.anchor_gps = anchor_gps
+        print('init, self',self.anchor_gps)
         self.anchorPosition_enu = []
         self.offsetQ = offsetQ
         with open(filename,'r') as f:  #os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json'
@@ -80,6 +81,7 @@ class UWBSimulate():
         # print(self.allUwb)
 
     def metadata_initialize(self,anchorPosition_gps):
+        print(anchorPosition_gps)
         anchorPosition_enu = [(0, 0, 0)]
         refPointGps = anchorPosition_gps[0]
         for i in range(1, len(anchorPosition_gps)):
@@ -91,6 +93,8 @@ class UWBSimulate():
         self.anchorPosition_enu = anchorPosition_enu
 
     def uwbReplay(self):
+        print('uwbReplay, self',self.anchor_gps)
+        # print(self.anchor_gps)
         self.metadata_initialize(self.anchor_gps)
         start_time = time.time()
         for uwb in self.allUwb:
