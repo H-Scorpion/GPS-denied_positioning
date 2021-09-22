@@ -1,5 +1,6 @@
 import joblib
 import datetime
+import copy
 import time
 import json
 import serial
@@ -31,7 +32,7 @@ def readFixGps(gpsQue):
 
 def anchor_gps_2_anc_gps_q(anchor_gps):
     templatePath = os.path.dirname(__file__)+'/template/'
-    anchor_list = anchor_gps
+    anchor_list = copy.deepcopy(anchor_gps)
 
     for i in range(4):
         pvt_obj = joblib.load(templatePath + 'NAV-PVT_template.pkl')

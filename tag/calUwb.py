@@ -19,45 +19,64 @@ distanceQ = collections.deque(maxlen=1)
 #     def __init__(self):
 #         self.
 
+
 class UWBHardware():
-    def __init__(self, comport, baudrate=9600, timeout=0.01):
+    def __init__(self, offsetQ,comport,anchor_gps, baudrate=9600, timeout=0.01,):
         self.ser = serial.Serial(comport, baudrate=baudrate, timeout=timeout)
         self.is_run = threading.Event()
-        self.distanceData = [0,0,0,0]
+        self.distanceData = [0, 0, 0, 0]
+        self.anchor_gps = anchor_gps
+        self.anchorPosition_enu = []
+        self.offsetQ = offsetQ
+        self.uwbDataList = []
+        self.start_time = time.time()
+
+    def metadata_initialize(self, anchorPosition_gps):
+        print(anchorPosition_gps)
+        anchorPosition_enu = [(0, 0, 0)]
+        refPointGps = anchorPosition_gps[0]
+        for i in range(1, len(anchorPosition_gps)):
+            # print(anchorPosition_gps[i][0])
+            enu = pm.geodetic2enu(anchorPosition_gps[i][0], anchorPosition_gps[i][1],
+                                  anchorPosition_gps[i][2], refPointGps[0], refPointGps[1], refPointGps[2])
+            anchorPosition_enu.append(enu)
+        print(anchorPosition_enu)
+        self.anchorPosition_enu = anchorPosition_enu
+    def onUwb(self,rx_1):
+        timestamp = time.time()-self.start_time
+        data = str(rx_1).split(' ')
+        print()
+        print('---Time---: ', timestamp)
+        # print('data: ', data)
+        d0, d1, d2, d3 = int(data[2], 16), int(
+            data[3], 16), int(data[4], 16), int(data[5], 16)
+        rn = int(data[6], 16)
+        dis = [d0, d1, d2, d3]
+        distanceQ.append(dis)
+        print('dis:', dis)
+        self.uwbDataList.append(
+            {'time': timestamp, 'dis': dis, 'rn': rn})
+        self.distanceData = dis
+        offset = costfun_method(self.distanceData, self.anchorPosition_enu)
+        # print('offset:',offset)
+        self.offsetQ.append(offset)
 
     def run(self):
         fi_num = datetime.now().strftime("%H_%M_%S")
-        uwbDataList = []
-        start_time = time.time()
-
+        self.start_time = time.time()
         while self.is_run.is_set():
             rx_1 = self.ser.readline()
-            try:                
+            try:
                 if(len(rx_1) >= 20 and 'mc' in str(rx_1)):
-                    timestamp = time.time()-start_time
-                    data = str(rx_1).split(' ')
-                    print()
-                    print('---Time---: ', timestamp)
-                    # print('data: ', data)
-                    d0, d1, d2, d3 = int(data[2], 16), int(
-                        data[3], 16), int(data[4], 16), int(data[5], 16)
-                    rn = int(data[6], 16)
-                    dis = [d0, d1, d2, d3]
-                    distanceQ.append(dis)
-                    print('dis:', dis)
-                    uwbDataList.append({'time': timestamp, 'dis': dis, 'rn':rn})
-                    self.distanceData = dis
+                    self.onUwb(rx_1)
                 time.sleep(0.2)
 
             except ValueError:
                 print('ValueError')
             finally:
-                pass
-        
-        with open(os.path.dirname(__file__)+'/uwbData/UWB_dis_' + fi_num + '.json', 'a') as fout:
-            json.dump(uwbDataList, fout)
-
-        print('finish dumping ubx json data.')
+                with open(os.path.dirname(__file__)+'/uwbData/UWB_dis_' + fi_num + '.json', 'a') as fout:
+                    json.dump(self.uwbDataList, fout)
+                print('finish dumping ubx json data.')
 
     def start(self):
         self.is_run.set()
@@ -69,24 +88,24 @@ class UWBHardware():
 
 
 class UWBSimulate():
-    def __init__(self,offsetQ, filename, anchor_gps):
+    def __init__(self, offsetQ, filename, anchor_gps):
         self.is_run = threading.Event()
-        self.distanceData = [0,0,0,0]
+        self.distanceData = [0, 0, 0, 0]
         self.anchor_gps = anchor_gps
         self.anchorPosition_enu = []
         self.offsetQ = offsetQ
-        with open(filename,'r') as f:  #os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json'
+        with open(filename, 'r') as f:  # os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json'
             self.allUwb = json.load(f)
         # print(self.allUwb)
 
-    def metadata_initialize(self,anchorPosition_gps):
+    def metadata_initialize(self, anchorPosition_gps):
         print(anchorPosition_gps)
         anchorPosition_enu = [(0, 0, 0)]
         refPointGps = anchorPosition_gps[0]
         for i in range(1, len(anchorPosition_gps)):
             # print(anchorPosition_gps[i][0])
             enu = pm.geodetic2enu(anchorPosition_gps[i][0], anchorPosition_gps[i][1],
-                                anchorPosition_gps[i][2], refPointGps[0], refPointGps[1], refPointGps[2])
+                                  anchorPosition_gps[i][2], refPointGps[0], refPointGps[1], refPointGps[2])
             anchorPosition_enu.append(enu)
         print(anchorPosition_enu)
         self.anchorPosition_enu = anchorPosition_enu
@@ -106,10 +125,11 @@ class UWBSimulate():
                 print(e)
                 self._onUwb(uwb)
         self.stop()
-    def _onUwb(self,uwb):
+
+    def _onUwb(self, uwb):
         print(uwb)
 
-    def onUwb(self,uwb):
+    def onUwb(self, uwb):
         # print(uwb)
         self.distanceData = [i/1000 for i in uwb['dis'][:4]]
         offset = costfun_method(self.distanceData, self.anchorPosition_enu)
@@ -124,11 +144,9 @@ class UWBSimulate():
         self.is_run.clear()
 
 
-
 def readUwb():
     # _ser1 = serial.Serial('/dev//ttyACM0', baudrate=9600, timeout=0.01)
     _ser1 = serial.Serial('COM20', baudrate=9600, timeout=0.01)
-
 
     fi_num = datetime.now().strftime("%H_%M_%S")
     uwbDataList = []
@@ -136,7 +154,7 @@ def readUwb():
     try:
         while True:
             rx_1 = _ser1.readline()
-            try:                
+            try:
                 if(len(rx_1) >= 20 and 'mc' in str(rx_1)):
                     timestamp = time.time()-start_time
                     data = str(rx_1).split(' ')
@@ -149,7 +167,8 @@ def readUwb():
                     dis = [d0, d1, d2, d3]
                     distanceQ.append(dis)
                     print('dis:', dis)
-                    uwbDataList.append({'time': timestamp, 'dis': dis, 'rn':rn})
+                    uwbDataList.append(
+                        {'time': timestamp, 'dis': dis, 'rn': rn})
                 time.sleep(0.2)
 
             except ValueError:
@@ -158,12 +177,11 @@ def readUwb():
                 pass
     except KeyboardInterrupt:
         print('KeyboardInterrupt')
-        
+
         with open(os.path.dirname(__file__)+'/uwbData/UWB_dis_' + fi_num + '.json', 'a') as fout:
             json.dump(uwbDataList, fout)
 
         print('finish dumping ubx json data.')
-
 
 
 # def calOffset(offsetQ,anchorPosition_enu):
@@ -176,9 +194,9 @@ def readUwb():
 #     uwbSimulate(myonUwb)
 
 
-    
-if __name__=='__main__':
-    uwbmanager = UWBSimulate(os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json')
+if __name__ == '__main__':
+    uwbmanager = UWBSimulate(os.path.dirname(
+        __file__)+'/uwbData/UWB_dis_18_49_17.json')
     uwbmanager.start()
     while True:
         time.sleep(1.)
@@ -187,9 +205,6 @@ if __name__=='__main__':
         #     # print(e)
         #     uwbmanager.stop()
         #     print('uwbmanager.stop()')
-
-
-
 
     # readUwb()
     # uwbSimulate()

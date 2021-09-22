@@ -19,21 +19,17 @@ anc_gps_q = collections.deque(maxlen=1)
 
 # anchor_gps = [(25.02097, 121.54332, 0), (25.02208, 121.5346, 0), (
 #     25.01646, 121.53351, 0), (25.01531, 121.54184, 0)]
-anchor_gps = [(0,0, 0), (0,0, 0), (0,0, 0),(0,0, 0)]
+anchor_gps = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
 
 
-anc_gps_q.append(
-    copy.deepcopy(anchor_gps)
-    # (lat, lon, heith)
-)
+anc_gps_q = anchor_gps_2_anc_gps_q(copy.deepcopy(anchor_gps))
+# (lat, lon, heith)
 
 
 # a0:25.017808099461927, 121.54450303082434
 # a1:25.01798327478762, 121.54427409377229
 # a2:25.017893345724577, 121.54415342667595
 # a3:25.0177143806361, 121.54435981418773
-
-
 
 
 def calRealPos(offset, pvt_obj):
@@ -48,18 +44,15 @@ def calRealPos(offset, pvt_obj):
     return real_pos_obj
 
 
-
-
-
-
 if __name__ == '__main__':
     th_gps = threading.Thread(
         target=mqtt_readGps, args=[anc_gps_q], daemon=True)
     # th_gps = threading.Thread(
     #     target=readFixGps, args=[anc_gps_q], daemon=True)
     th_gps.start()
-    uwbManager = UWBSimulate(relPos, os.path.dirname(
-        __file__)+'/uwbData/UWB_dis_18_49_17.json', anchor_gps)
+    # uwbManager = UWBSimulate(relPos, os.path.dirname(
+    #     __file__)+'/uwbData/UWB_dis_18_49_17.json', anchor_gps)
+    uwbManager = UWBSimulate(relPos,'COM13', anchor_gps)
     uwbManager.start()
     time.sleep(1)
 
