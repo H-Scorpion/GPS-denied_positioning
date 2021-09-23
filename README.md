@@ -22,6 +22,10 @@ check anchor number
 
 ```
 run transferGps.py
+```
+python3 transferGps.py -a a0 -i 192.0168.0.116
+```
+
 
 ## tag
 run main

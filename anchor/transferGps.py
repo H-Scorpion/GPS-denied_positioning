@@ -1,3 +1,4 @@
+import argparse
 import joblib
 import datetime
 import time
@@ -7,8 +8,15 @@ import io
 import paho.mqtt.client as mqtt
 from ubx import UBXManager
 
+def parseArg():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', default='a0')
+    parser.add_argument('-i', default='192.168.0.116')
+    args = parser.parse_args()
+    return args
 
-def readGps(mqtt_client):
+
+def readGps(mqtt_client,anchor):
 
     def my_onUBX(obj):
         print(obj)
@@ -16,12 +24,13 @@ def readGps(mqtt_client):
             bio = io.BytesIO()
             joblib.dump(obj, bio)
             data = bio.getvalue()
-            mqtt_client.publish('gps/a0',data)
+            mqtt_client.publish('gps/'+anchor,data)
 
     def my_onUBXError(msgClass, msgId, errMsg):
         print(msgClass, msgId, errMsg)
 
-    comPort = '/dev/ttyUSB0'
+    # comPort = '/dev/ttyUSB0'
+    comPort = 'COM12'
     ser = serial.Serial(comPort, 115200, timeout=None)
 
     manager = UBXManager(ser, debug=True, eofTimeout=3.)
@@ -45,6 +54,10 @@ def readGps(mqtt_client):
 # readGps('COM16')
 
 if __name__=='__main__':
+    args = parseArg()
+    brokerIP = args.i
+    anchor = args.a
+    # print(brokerIP)
     client = mqtt.Client()
-    client.connect("192.168.0.107", 1883, 60)
-    readGps(client)
+    client.connect(brokerIP, 1883, 60)
+    readGps(client,anchor)
