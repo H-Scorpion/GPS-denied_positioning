@@ -22,6 +22,11 @@ check anchor number
 
 ```
 run transferGps.py
+```
+python3 transferGps.py -a a0 -i 192.168.0.116
+```
+-a: set anchor name
+-i: set broker name 
 
 ## tag
 run main
