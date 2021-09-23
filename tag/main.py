@@ -9,28 +9,28 @@ import os
 import pymap3d as pm
 # from calGps import calGps
 # from ubx import UBXManager
-from readGps import *
+from readGps import readFixGps
+from readGps import mqtt_readGps
+from readGps import anchor_gps_2_anc_gps_q
+from readGps import anc_gps_q_2_anchor_gps
 from calUwb import UWBSimulate
+from calUwb import UWBHardware
 
 
-relPos = collections.deque(maxlen=1)
+relPos = collections.deque(maxlen=1)  # [(e,n,u)]
 anc_gps_q = collections.deque(maxlen=1)
 
+relPos.append((0, 0, 0))
 
-# anchor_gps = [(25.02097, 121.54332, 0), (25.02208, 121.5346, 0), (
-#     25.01646, 121.53351, 0), (25.01531, 121.54184, 0)]
-anchor_gps = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
-
+# (lat, lon, heith)
+anchor_gps = [(25.02097, 121.54332, 0), (25.02208, 121.5346, 0), (
+    25.01646, 121.53351, 0), (25.01531, 121.54184, 0)]
+# anchor_gps = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
 
 anc_gps_q = anchor_gps_2_anc_gps_q(copy.deepcopy(anchor_gps))
-# (lat, lon, heith)
 
-
-# a0:25.017808099461927, 121.54450303082434
-# a1:25.01798327478762, 121.54427409377229
-# a2:25.017893345724577, 121.54415342667595
-# a3:25.0177143806361, 121.54435981418773
-
+def objGetGps(pvt_obj):
+    return (pvt_obj.lat*10**-7, pvt_obj.lon*10**-7, pvt_obj.height*10**-7)
 
 def calRealPos(offset, pvt_obj):
     real_pos_obj = pvt_obj  # default
@@ -45,15 +45,18 @@ def calRealPos(offset, pvt_obj):
 
 
 if __name__ == '__main__':
+    # If you want to run with fix GPS, just initialize 'anchor_gps'
+    # No need to run readFixGps
+    print('anchor_gps:', anchor_gps)
+    print('anc_gps_q:', anc_gps_q)
     th_gps = threading.Thread(
         target=mqtt_readGps, args=[anc_gps_q], daemon=True)
-    # th_gps = threading.Thread(
-    #     target=readFixGps, args=[anc_gps_q], daemon=True)
     th_gps.start()
+    
     # uwbManager = UWBSimulate(relPos, os.path.dirname(
     #     __file__)+'/uwbData/UWB_dis_18_49_17.json', anchor_gps)
-    uwbManager = UWBSimulate(relPos,'COM13', anchor_gps)
-    uwbManager.start()
+    # uwbManager = UWBHardware(relPos,'COM20', anchor_gps)
+    # uwbManager.start()
     time.sleep(1)
 
     # while True:
@@ -69,12 +72,14 @@ if __name__ == '__main__':
             duration = t - start_time
 
             ref_pvt_obj = anc_gps_q[0][0]
+            print('a0 position:',objGetGps(ref_pvt_obj))
             offset = relPos[0]
             # print(duration, ref_pvt_obj, offset)
 
             real_pos_obj = calRealPos(offset, ref_pvt_obj)
-            # print('gps position:', real_pos_obj.lat, real_pos_obj.lon, real_pos_obj.height)
-            print(anc_gps_q)
+            # print('Tag position:', 'lat:', real_pos_obj.lat*10**-7, 'lon:',
+            #       real_pos_obj.lon*10**-7, 'height:', real_pos_obj.height*10**-7)
+            # print(anc_gps_q)
             # do something
             # calc_position(lon, lat, d0, d1, d2, d3)
         else:

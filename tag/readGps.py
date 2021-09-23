@@ -11,13 +11,17 @@ import paho.mqtt.client as mqtt
 from ubx import UBXManager
 
 
+def objGetGps(pvt_obj):
+    return (pvt_obj.lat*10**-7, pvt_obj.lon*10**-7, pvt_obj.height*10**-7)
+
+
 def readFixGps(gpsQue):
     """Write 4 anchor gps to queue
 
     Args:
         gpsQue (deque): maxlen = 1, contains a 4*3 list, 4 anchor each has (lat, lon, height) 
     """
-
+    print('gpsQue in readFix:', gpsQue)
     templatePath = os.path.dirname(__file__)+'/template/'
     anchor_list = gpsQue[0]
 
@@ -62,27 +66,31 @@ def mqtt_readGps(gpsQue):
         client.subscribe("gps/a3")
 
     def on_message(client, userdata, msg):
-        # print('msg:',msg.topic)
+        print('msg:', msg.topic)
         bio = io.BytesIO(msg.payload)
         obj = joblib.load(bio)
         anchor_list = gpsQue[0]
         if msg.topic == "gps/a0":
             anchor_list[0] = obj
         elif msg.topic == "gps/a1":
-            anchor_list[2] = obj
+            anchor_list[1] = obj
         elif msg.topic == "gps/a2":
-            anchor_list[3] = obj
+            anchor_list[2] = obj
         elif msg.topic == "gps/a3":
-            anchor_list[0] = obj
-
+            anchor_list[3] = obj
+        print('readGps a0 gps:', objGetGps(anchor_list[0]), '\nreadGps a1 gps:', objGetGps(
+            anchor_list[1]), '\nreadGps a2 gps:', objGetGps(anchor_list[2]), '\nreadGps a3 gps:', objGetGps(anchor_list[3]))
         gpsQue.append(anchor_list)
         # print(obj)
+
+    with open(os.path.dirname(__file__)+'/brokerIP.txt') as f:
+        brokerIP = f.read()
 
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("192.168.0.106", 1883, 60)
-
+    client.connect(brokerIP, 1883, 60)
+    print('connected to broker')
     client.loop_forever()
 
 
