@@ -9,10 +9,12 @@ import os
 import pymap3d as pm
 # from calGps import calGps
 # from ubx import UBXManager
-from readGps import readFixGps
+from auxiliary import objGetGps
+from auxiliary import anchor_gps_2_anc_gps_q
+from auxiliary import anc_gps_q_2_anchor_gps
+
+# from readGps import readFixGps
 from readGps import mqtt_readGps
-from readGps import anchor_gps_2_anc_gps_q
-from readGps import anc_gps_q_2_anchor_gps
 from calUwb import UWBSimulate
 from calUwb import UWBHardware
 
@@ -29,8 +31,6 @@ anchor_gps = [(25.02097, 121.54332, 0), (25.02208, 121.5346, 0), (
 
 anc_gps_q = anchor_gps_2_anc_gps_q(copy.deepcopy(anchor_gps)) #q stores ubx obj
 
-def objGetGps(pvt_obj):
-    return (pvt_obj.lat*10**-7, pvt_obj.lon*10**-7, pvt_obj.height*10**-7)
 
 def calRealPos(offset, pvt_obj):
     real_pos_obj = pvt_obj  # default
@@ -47,6 +47,7 @@ def calRealPos(offset, pvt_obj):
 if __name__ == '__main__':
     # If you want to run with fix GPS, just initialize 'anchor_gps'
     # No need to run readFixGps
+    
     print('anchor_gps:', anchor_gps)
     print('anc_gps_q:', anc_gps_q)
     # th_gps = threading.Thread(
@@ -58,10 +59,6 @@ if __name__ == '__main__':
     # uwbManager = UWBHardware(relPos,'COM20', anchor_gps)
     uwbManager.start()
     time.sleep(1)
-
-    # while True:
-    #     print(anc_gps_q)
-    #     time.sleep(1.)
 
     start_time = time.time()
     last_time = time.time()
