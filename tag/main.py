@@ -47,16 +47,17 @@ def calRealPos(offset, pvt_obj):
 if __name__ == '__main__':
     # If you want to run with fix GPS, just initialize 'anchor_gps'
     # No need to run readFixGps
-    
+    print('initial data:')
     print('anchor_gps:', anchor_gps)
-    print('anc_gps_q:', anc_gps_q)
+    print('-------------------------------')
+    # print('anc_gps_q:', anc_gps_q)
     # th_gps = threading.Thread(
     #     target=mqtt_readGps, args=[anc_gps_q], daemon=True)
     # th_gps.start()
     
-    uwbManager = UWBSimulate(relPos, os.path.dirname(
-        __file__)+'/uwbData/UWB_dis_18_49_17.json', anchor_gps)
-    # uwbManager = UWBHardware(relPos,'COM20', anchor_gps)
+    # uwbManager = UWBSimulate(relPos, os.path.dirname(
+    #     __file__)+'/uwbData/UWB_dis_18_49_17.json', anchor_gps)
+    uwbManager = UWBHardware(relPos,'COM20', anc_gps_q)
     uwbManager.start()
     time.sleep(1)
 
@@ -64,7 +65,7 @@ if __name__ == '__main__':
     last_time = time.time()
     while True:
         t = time.time()
-        if t - last_time > 1:
+        if t - last_time > 0.2:
             last_time = t
             duration = t - start_time
 
@@ -77,7 +78,7 @@ if __name__ == '__main__':
             real_pos_obj = calRealPos(offset, ref_pvt_obj)
             print('Tag position:', 'lat:', real_pos_obj.lat*10**-7, 'lon:',
                   real_pos_obj.lon*10**-7, 'height:', real_pos_obj.height*10**-7)
-            # print(anc_gps_q)
+            print(anc_gps_q)
             # do something
             # calc_position(lon, lat, d0, d1, d2, d3)
         else:

@@ -11,6 +11,7 @@ import os
 import numpy as np
 import pymap3d as pm
 import collections
+from auxiliary import anc_gps_q_2_anchor_gps
 from datetime import datetime
 from distance2Position import costfun_method
 
@@ -22,17 +23,18 @@ distanceQ = collections.deque(maxlen=1)
 
 
 class UWBHardware():
-    def __init__(self, offsetQ,comport,anchor_gps, baudrate=9600, timeout=0.01,):
+    def __init__(self, offsetQ,comport,anchor_gps_q, baudrate=9600, timeout=0.01,):
         self.ser = serial.Serial(comport, baudrate=baudrate, timeout=timeout)
         self.is_run = threading.Event()
         self.distanceData = [0, 0, 0, 0]
-        self.anchor_gps = anchor_gps
+        self.anchor_gps_q = anchor_gps_q
+        self.anchor_gps = copy.deepcopy(anc_gps_q_2_anchor_gps(anchor_gps_q)) # gps list
         self.anchorPosition_enu = []
         self.offsetQ = offsetQ
         self.uwbDataList = []
         self.start_time = time.time()
 
-    def metadata_initialize(self, anchorPosition_gps):
+    def gps2enu_list(self, anchorPosition_gps):
         print(anchorPosition_gps)
         anchorPosition_enu = [(0, 0, 0)]
         refPointGps = anchorPosition_gps[0]
@@ -41,9 +43,13 @@ class UWBHardware():
             enu = pm.geodetic2enu(anchorPosition_gps[i][0], anchorPosition_gps[i][1],
                                   anchorPosition_gps[i][2], refPointGps[0], refPointGps[1], refPointGps[2])
             anchorPosition_enu.append(enu)
-        print(anchorPosition_enu)
+        # print(anchorPosition_enu)
         self.anchorPosition_enu = anchorPosition_enu
+        
     def onUwb(self,rx_1):
+        self.anchor_gps = copy.deepcopy(anc_gps_q_2_anchor_gps(self.anchor_gps_q))
+        self.gps2enu_list(self.anchor_gps)
+
         timestamp = time.time()-self.start_time
         data = str(rx_1).split(' ')
         print()
@@ -51,33 +57,39 @@ class UWBHardware():
         # print('data: ', data)
         d0, d1, d2, d3 = int(data[2], 16), int(
             data[3], 16), int(data[4], 16), int(data[5], 16)
-        rn = int(data[6], 16)
         dis = [d0, d1, d2, d3]
         distanceQ.append(dis)
-        print('dis:', dis)
+        # print('dis:', dis)
+        print()
         self.uwbDataList.append(
-            {'time': timestamp, 'dis': dis, 'rn': rn})
+            {'time': timestamp, 'dis': dis})
         self.distanceData = dis
+        print('anchor_gps:',self.anchor_gps)
+        print('distanceData:',self.distanceData)
+        print('anchorPosition_enu:',self.anchorPosition_enu)
         offset = costfun_method(self.distanceData, self.anchorPosition_enu)
         # print('offset:',offset)
         self.offsetQ.append(offset)
 
     def run(self):
         fi_num = datetime.now().strftime("%H_%M_%S")
-        self.start_time = time.time()
+        self.start_time = time.time()        
         while self.is_run.is_set():
             rx_1 = self.ser.readline()
-            try:
-                if(len(rx_1) >= 20 and 'mc' in str(rx_1)):
-                    self.onUwb(rx_1)
-                time.sleep(0.2)
 
-            except ValueError:
-                print('ValueError')
-            finally:
-                with open(os.path.dirname(__file__)+'/uwbData/UWB_dis_' + fi_num + '.json', 'a') as fout:
-                    json.dump(self.uwbDataList, fout)
-                print('finish dumping ubx json data.')
+            if(len(rx_1) >= 20 and 'mc' in str(rx_1)):
+                self.onUwb(rx_1)
+            time.sleep(0.2)
+
+            # except ValueError:
+            #     print('ValueError')
+            # except Exception as e:
+            #     print(e)
+
+            # finally:
+            #     with open(os.path.dirname(__file__)+'/uwbData/UWB_dis_' + fi_num + '.json', 'a') as fout:
+            #         json.dump(self.uwbDataList, fout)
+            #     print('finish dumping ubx json data.')
 
     def start(self):
         self.is_run.set()
