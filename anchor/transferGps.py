@@ -12,15 +12,16 @@ def readGps(mqtt_client):
 
     def my_onUBX(obj):
         print(obj)
-        bio = io.BytesIO()
-        joblib.dump(obj, bio)
-        data = bio.getvalue()
-        mqtt_client.publish('gps',data)
+        if obj._id == 0x07:
+            bio = io.BytesIO()
+            joblib.dump(obj, bio)
+            data = bio.getvalue()
+            mqtt_client.publish('gps/a0',data)
 
     def my_onUBXError(msgClass, msgId, errMsg):
         print(msgClass, msgId, errMsg)
 
-    comPort = 'COM11'
+    comPort = '/dev/ttyUSB0'
     ser = serial.Serial(comPort, 115200, timeout=None)
 
     manager = UBXManager(ser, debug=True, eofTimeout=3.)
