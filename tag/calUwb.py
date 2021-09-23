@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 import serial
 import glob
+import copy
 import json
 import threading
 import collections
@@ -91,7 +92,7 @@ class UWBSimulate():
     def __init__(self, offsetQ, filename, anchor_gps):
         self.is_run = threading.Event()
         self.distanceData = [0, 0, 0, 0]
-        self.anchor_gps = anchor_gps
+        self.anchor_gps = copy.deepcopy(anchor_gps)
         self.anchorPosition_enu = []
         self.offsetQ = offsetQ
         with open(filename, 'r') as f:  # os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json'
@@ -107,7 +108,7 @@ class UWBSimulate():
             enu = pm.geodetic2enu(anchorPosition_gps[i][0], anchorPosition_gps[i][1],
                                   anchorPosition_gps[i][2], refPointGps[0], refPointGps[1], refPointGps[2])
             anchorPosition_enu.append(enu)
-        print(anchorPosition_enu)
+        print('metadata_initialize:anchorPosition_enu:\n',anchorPosition_enu)
         self.anchorPosition_enu = anchorPosition_enu
 
     def uwbReplay(self):
