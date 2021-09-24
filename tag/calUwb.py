@@ -52,12 +52,18 @@ class UWBHardware():
 
         timestamp = time.time()-self.start_time
         data = str(rx_1).split(' ')
+        # data = rx_1.split(' ')
+        # print('Data:', data)
         print()
-        print('---Time---: ', timestamp)
+        # print('---Time---: ', timestamp)
         # print('data: ', data)
-        d0, d1, d2, d3 = int(data[2], 16), int(
-            data[3], 16), int(data[4], 16), int(data[5], 16)
-        dis = [d0, d1, d2, d3]
+        d0, d1, d2, d3 = data[2].split(',')[0], data[3].split(',')[0], data[4].split(',')[0], data[5].split(',')[1]
+        dis = [int(d0)/1000, int(d1)/1000, int(d2)/1000, int(d3)/1000]
+        # print('dis:',dis)
+
+        # d0, d1, d2, d3 = int(data[2], 16), int(
+        #     data[3], 16), int(data[4], 16), int(data[5], 16)
+        # dis = [d0, d1, d2, d3]
         distanceQ.append(dis)
         # print('dis:', dis)
         print()
@@ -70,6 +76,9 @@ class UWBHardware():
         offset = costfun_method(self.distanceData, self.anchorPosition_enu)
         # print('offset:',offset)
         self.offsetQ.append(offset)
+
+
+
 
     def run(self):
         fi_num = datetime.now().strftime("%H_%M_%S")
