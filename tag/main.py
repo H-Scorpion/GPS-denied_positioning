@@ -18,6 +18,7 @@ from auxiliary import anc_gps_q_2_anchor_gps
 from readGps import mqtt_readGps
 from calUwb import UWBSimulate
 from calUwb import UWBHardware
+from calUwb import UWBSimulate_enuGPS
 
 
 relPos = collections.deque(maxlen=1)  # [(e,n,u)]
@@ -52,23 +53,29 @@ def calRealPos(offset, pvt_obj):
     real_pos_obj.height = int(real_pos_obj.height*10**7)
     return real_pos_obj
 
+def sendObj2FC(obj,ser):
+    serialized = real_pos_obj.serialize()
+    ser.write(serialized)
 
 if __name__ == '__main__':
     # If you want to run with fix GPS, just initialize 'anchor_gps'
     # No need to run readFixGps
     tagPosData = []
+    serCom = 'COM16'
+    ser = serial.Serial(serCom, 115200, timeout=None)
+
 
     print('initial data:')
     print('anchor_gps:', anchor_gps)
     print('-------------------------------')
     # print('anc_gps_q:', anc_gps_q)
-    th_gps = threading.Thread(
-        target=mqtt_readGps, args=[anc_gps_q], daemon=True)
-    th_gps.start()
+    # th_gps = threading.Thread(
+    #     target=mqtt_readGps, args=[anc_gps_q], daemon=True)
+    # th_gps.start()
 
-    # uwbManager = UWBSimulate(relPos, os.path.dirname(
-    #     __file__)+'/uwbData/UWB_dis_18_49_17.json', anchor_gps)
-    uwbManager = UWBHardware(relPos, 'COM22', anc_gps_q)
+    uwbManager =  UWBSimulate_enuGPS(relPos, os.path.dirname(
+        __file__)+'/uwbData/GPSDe_UWB_dis_robot.json', anchor_gps)
+    # uwbManager = UWBHardware(relPos, 'COM22', anc_gps_q)
     uwbManager.start()
     time.sleep(1)
 
@@ -89,12 +96,14 @@ if __name__ == '__main__':
             # print(duration, ref_pvt_obj, offset)
             print('offset:', offset)
             real_pos_obj = calRealPos(offset, ref_pvt_obj)
-            print('Tag position:', 'lat:', real_pos_obj.lat*10**-7, 'lon:',
-                  real_pos_obj.lon*10**-7, 'height:', real_pos_obj.height*10**-7)
+            # print('Tag position:', 'lat:', real_pos_obj.lat*10**-7, 'lon:',
+            #       real_pos_obj.lon*10**-7, 'height:', real_pos_obj.height*10**-7)
+            print('Tag position:',objGetGps(real_pos_obj))
             tagPosData.append([time.time(), real_pos_obj,offset])
             # print(anc_gps_q)
             # do something
             # calc_position(lon, lat, d0, d1, d2, d3)
+            sendObj2FC(real_pos_obj,ser)
             count += 1
 
         else:
