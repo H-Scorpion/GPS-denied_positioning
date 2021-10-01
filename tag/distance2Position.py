@@ -1,9 +1,9 @@
 import numpy as np
-from scipy import optimize
+import time
+# from scipy import optimize
 import sys
 import collections
-import time
-from scipy.optimize import lsq_linear, root, minimize
+# from scipy.optimize import lsq_linear
 
 
 def lsq_method(distances_to_anchors, anchor_positions):
@@ -32,8 +32,11 @@ def lsq_method(distances_to_anchors, anchor_positions):
     squared_distances_to_anchors = (
         squared_distances_to_anchors - squared_distances_to_anchors[0])[1:]
     b = (K - squared_distances_to_anchors) / 2.
-    res = lsq_linear(anchor_positions, b, lsmr_tol='auto', verbose=0)
-    return res.x + anchor_offset
+
+    res = np.linalg.lstsq(anchor_positions, b, rcond=None)[0]
+
+    
+    return res + anchor_offset
 
 
 def costfun_method(distances_to_anchors, anchor_positions):
@@ -86,10 +89,10 @@ def costfun_method(distances_to_anchors, anchor_positions):
         return x1
 
     ranges = (slice(0, 30, 0.05), )
-    resbrute = optimize.brute(
-        cost, ranges, full_output=True, finish=optimize.fmin)
+    resbrute = newton(function, derivative,50,0.01)
+
     new_tag_pos = np.concatenate(
-        (np.delete(np.array(tag_pos), 2), resbrute[0] + anc_z_ls_mean))
+        (np.delete(np.array(tag_pos), 2), [resbrute] + anc_z_ls_mean))
 
     return np.around(new_tag_pos, 4)
 
