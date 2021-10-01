@@ -5,6 +5,7 @@ import collections
 import copy
 import time
 import joblib
+import json
 import datetime
 import os
 import pymap3d as pm
@@ -35,7 +36,7 @@ relPos.append((0, 0, 0))
 #               (25.019144299999997, 121.54208469999999, 0.0131656), (25.019026099999998, 121.5423699, 0.0106915)]
 anchor_gps = [(25.01941, 121.54243, 1.3), (25.01941, 121.54236, 1.3),
               (25.01915, 121.54237, 1.3), (25.01915, 121.54244, 1.3)]
-
+anchor_enu = [(0, 0, 0), (-6, 0, 0), (-6, -29, 0), (0, -29, 0)]
 # anchor_gps = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
 
 anc_gps_q = anchor_gps_2_anc_gps_q(
@@ -53,17 +54,23 @@ def calRealPos(offset, pvt_obj):
     real_pos_obj.height = int(real_pos_obj.height*10**7)
     return real_pos_obj
 
-def sendObj2FC(obj,ser):
+
+def sendObj2FC(obj, ser):
     serialized = real_pos_obj.serialize()
     ser.write(serialized)
+
 
 if __name__ == '__main__':
     # If you want to run with fix GPS, just initialize 'anchor_gps'
     # No need to run readFixGps
-    tagPosData = []
-    serCom = 'COM16'
-    ser = serial.Serial(serCom, 115200, timeout=None)
+    with open("connection_data.json",'r') as f:
+        connection_data = json.load(f)[0]
+        serCom2FC = connection_data['fc_ttl_com']
 
+    isSending2FC = True
+    tagPosData = []
+    if isSending2FC:
+        ser = serial.Serial(serCom2FC, 115200, timeout=None)
 
     print('initial data:')
     print('anchor_gps:', anchor_gps)
@@ -73,40 +80,41 @@ if __name__ == '__main__':
     #     target=mqtt_readGps, args=[anc_gps_q], daemon=True)
     # th_gps.start()
 
-    uwbManager =  UWBSimulate_enuGPS(relPos, os.path.dirname(
-        __file__)+'/uwbData/GPSDe_UWB_dis_robot.json', anchor_gps)
+    uwbManager = UWBSimulate_enuGPS(relPos, os.path.dirname(
+        __file__)+'/uwbData/GPSDe_UWB_dis_robot.json', anchor_gps,anchor_enu)
     # uwbManager = UWBHardware(relPos, 'COM22', anc_gps_q)
     uwbManager.start()
     time.sleep(1)
 
     start_time = time.time()
     last_time = time.time()
-    count = 0
 
-    while count < 500:
-        t = time.time()
-        if t - last_time > 0.2:
-            last_time = t
-            duration = t - start_time
+    try:
+        while True:
+            t = time.time()
+            if t - last_time > 0.2:
+                last_time = t
+                duration = t - start_time
 
-            ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
-            # print('a0 position:', objGetGps(ref_pvt_obj))
-            # print('anchor_gps:', anchor_gps)
-            offset = relPos[0]
-            # print(duration, ref_pvt_obj, offset)
-            print('offset:', offset)
-            real_pos_obj = calRealPos(offset, ref_pvt_obj)
-            # print('Tag position:', 'lat:', real_pos_obj.lat*10**-7, 'lon:',
-            #       real_pos_obj.lon*10**-7, 'height:', real_pos_obj.height*10**-7)
-            print('Tag position:',objGetGps(real_pos_obj))
-            tagPosData.append([time.time(), real_pos_obj,offset])
-            # print(anc_gps_q)
-            # do something
-            # calc_position(lon, lat, d0, d1, d2, d3)
-            sendObj2FC(real_pos_obj,ser)
-            count += 1
+                ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
+                # print('a0 position:', objGetGps(ref_pvt_obj))
+                # print('anchor_gps:', anchor_gps)
+                offset = relPos[0]
+                # print(duration, ref_pvt_obj, offset)
+                print('offset:', offset)
+                real_pos_obj = calRealPos(offset, ref_pvt_obj)
+                # print('Tag position:', 'lat:', real_pos_obj.lat*10**-7, 'lon:',
+                #       real_pos_obj.lon*10**-7, 'height:', real_pos_obj.height*10**-7)
+                print('Tag position:', objGetGps(real_pos_obj))
+                tagPosData.append([time.time(), real_pos_obj, offset])
+                # print(anc_gps_q)
+                # calc_position(lon, lat, d0, d1, d2, d3)
+                if isSending2FC:
+                    sendObj2FC(real_pos_obj, ser)
 
-        else:
-            time.sleep(0.01)
-    filename = f'tagPosData_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}.pkl'
-    joblib.dump(tagPosData, filename)
+            else:
+                time.sleep(0.01)
+    except KeyboardInterrupt:
+        uwbManager.stop()
+    # filename = f'tagPosData_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}.pkl'
+    # joblib.dump(tagPosData, filename)
