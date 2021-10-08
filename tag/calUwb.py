@@ -23,7 +23,7 @@ distanceQ = collections.deque(maxlen=1)
 
 
 class UWBHardware():
-    def __init__(self, offsetQ, comport, anchor_gps_q, baudrate=9600, timeout=0.01,):
+    def __init__(self, offsetQ, comport, anchor_gps_q, baudrate=115200, timeout=0.01,):
         self.ser = serial.Serial(comport, baudrate=baudrate, timeout=timeout)
         self.is_run = threading.Event()
         self.distanceData = [0, 0, 0, 0]
@@ -75,9 +75,9 @@ class UWBHardware():
         self.uwbDataList.append(
             recv_data_dic)
         self.distanceData = dis
-        print('anchor_gps:', self.anchor_gps)
+        # print('anchor_gps:', self.anchor_gps)
         print('distanceData:', self.distanceData)
-        print('anchorPosition_enu:', self.anchorPosition_enu)
+        # print('anchorPosition_enu:', self.anchorPosition_enu)
         offset = costfun_method(self.distanceData, self.anchorPosition_enu)
         # print('offset:',offset)
         self.offsetQ.append(offset)

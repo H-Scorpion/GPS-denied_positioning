@@ -21,20 +21,12 @@ def obj_to_dict(obj):
 
 
 def my_onUBX(obj):
-    timestamp = time.time() - timestamp_start
+    duration = time.time() - timestamp_start
 
-    print(timestamp, obj)
+    print(duration, obj)
 
-    try:
-        with open(filename + '.log','ab') as f:
-            f.write(obj.serialize())
-    except TypeError:
-        print('obj.serialize() TypeError')
-
-    with open(filename + '.txt','a') as f:
-        f.write(f'{timestamp}, {json.dumps(obj_to_dict(obj), default=str)}\n')
     all_recv.append(
-        (timestamp, obj)
+        {'time': duration, 'obj': obj, 'timestamp': datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}
     )
 
 
@@ -45,7 +37,7 @@ def my_onUBXError(msgClass, msgId, errMsg):
 if __name__ == '__main__':
     with open("connection_data.json", 'r') as f:  # os.path.dirname(__file__)+'/uwbData/UWB_dis_18_49_17.json'
         connection_data = json.load(f)[0]
-        comPort = connection_data["gps_com"]
+        comPort = connection_data["get_gps_com"]
     ser = serial.Serial(comPort, 115200, timeout=None)
     manager = UBXManager(ser, debug=False, eofTimeout=3.)
 

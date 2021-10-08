@@ -67,7 +67,7 @@ if __name__ == '__main__':
         connection_data = json.load(f)[0]
         serCom2FC = connection_data['fc_ttl_com']
 
-    isSending2FC = True
+    isSending2FC = False
     tagPosData = []
     if isSending2FC:
         ser = serial.Serial(serCom2FC, 115200, timeout=None)
@@ -80,9 +80,9 @@ if __name__ == '__main__':
     #     target=mqtt_readGps, args=[anc_gps_q], daemon=True)
     # th_gps.start()
 
-    uwbManager = UWBSimulate_enuGPS(relPos, os.path.dirname(
-        __file__)+'/uwbData/GPSDe_UWB_dis_robot.json', anchor_gps,anchor_enu)
-    # uwbManager = UWBHardware(relPos, 'COM22', anc_gps_q)
+    # uwbManager = UWBSimulate_enuGPS(relPos, os.path.dirname(
+    #     __file__)+'/uwbData/GPSDe_UWB_dis_robot.json', anchor_gps,anchor_enu)
+    uwbManager = UWBHardware(relPos, 'COM22', anc_gps_q)
     uwbManager.start()
     time.sleep(1)
 
