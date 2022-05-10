@@ -16,7 +16,7 @@ from auxiliary import anchor_gps_2_anc_gps_q
 from auxiliary import anc_gps_q_2_anchor_gps
 
 # from readGps import readFixGps
-from readGps import mqtt_readGps
+# from readGps import mqtt_readGps
 from calUwb import UWBSimulate
 from calUwb import UWBHardware
 from calUwb import UWBSimulate_enuGPS
