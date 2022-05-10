@@ -2,7 +2,7 @@
     {
         "get_gps_com": "COM12",
         "broker_IP": "192.168.50.62",
-        "fc_ttl_com": "COM5",
+        "fc_ttl_com": "COM3",
         "tag_com": "COM10"
     }
 ]
