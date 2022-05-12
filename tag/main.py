@@ -52,6 +52,9 @@ def calRealPos(offset, pvt_obj):
     real_pos_obj.lat = int(real_pos_obj.lat*10**7)
     real_pos_obj.lon = int(real_pos_obj.lon*10**7)
     real_pos_obj.height = int(real_pos_obj.height*10**7)
+    real_pos_obj.pDOP = 1
+    real_pos_obj.numSV = 15
+    
     return real_pos_obj
 
 
@@ -92,7 +95,8 @@ if __name__ == '__main__':
     try:
         while True:
             t = time.time()
-            if t - last_time > 0.2:
+            if t - last_time > 0.15:
+                print(t - last_time)
                 last_time = t
                 duration = t - start_time
 
