@@ -2,7 +2,7 @@
     {
         "get_gps_com": "COM3",
         "broker_IP": "192.168.50.62",
-        "fc_ttl_com": "COM3",
+        "fc_ttl_com": "/dev/ttyUSB0",
         "tag_com": "COM10"
     }
 ]

@@ -186,6 +186,7 @@ class UWBSimulate_enuGPS(UWBSimulate):
 if __name__ == '__main__':
     uwbmanager = UWBSimulate(os.path.dirname(
         __file__)+'/uwbData/UWB_dis_18_49_17.json')
+    print(uwbmanager)
     uwbmanager.start()
     while True:
         time.sleep(1.)

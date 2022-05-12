@@ -80,9 +80,8 @@ if __name__ == '__main__':
     # th_gps = threading.Thread(
     #     target=mqtt_readGps, args=[anc_gps_q], daemon=True)
     # th_gps.start()
-
-    uwbManager = UWBSimulate_enuGPS(relPos, os.path.dirname(
-        __file__)+'/uwbData/GPSDe_UWB_dis_robot.json', anchor_gps,anchor_enu)
+    uwbManager = UWBSimulate_enuGPS(relPos, os.path.join(os.path.dirname(
+        __file__), './uwbData/GPSDe_UWB_dis_robot.json'), anchor_gps,anchor_enu)
     # uwbManager = UWBHardware(relPos, tag_com, anc_gps_q)
     uwbManager.start()
     time.sleep(1)
