@@ -34,6 +34,7 @@ class UWBHardware():
         self.offsetQ = offsetQ
         self.uwbDataList = []
         self.start_time = time.time()
+        self.calibrate_dis = np.array([-.6, -.6, -.6 ,-.6])
         # self.recordDistanceData = []
 
     def gps2enu_list(self, anchorPosition_gps):
@@ -59,6 +60,7 @@ class UWBHardware():
         if(dec_rx1 != ' ' and dec_rx1.find('mc') >= 0):
             dis_ = dec_rx1.split(' ')
             dis = np.array([(int(dis_[2],16)),(int(dis_[3],16)), (int(dis_[4],16)), (int(dis_[5],16))])/1000.0
+            dis = dis+self.calibrate_dis
             print(dis) # meter
 
 
