@@ -34,6 +34,7 @@ class UWBHardware():
         self.offsetQ = offsetQ
         self.uwbDataList = []
         self.start_time = time.time()
+        self.calibrate_dis = np.array([-.6, -.6, -.6 ,-.6])
         # self.recordDistanceData = []
 
     def gps2enu_list(self, anchorPosition_gps):
@@ -53,17 +54,26 @@ class UWBHardware():
             anc_gps_q_2_anchor_gps(self.anchor_gps_q))
         # update anchorPosition_enu
         self.gps2enu_list(self.anchor_gps)
-
         duration = time.time()-self.start_time
-        data = str(rx_1).split(' ')
+
+        dec_rx1 = rx_1.decode('utf-8')
+        if(dec_rx1 != ' ' and dec_rx1.find('mc') >= 0):
+            dis_ = dec_rx1.split(' ')
+            dis = np.array([(int(dis_[2],16)),(int(dis_[3],16)), (int(dis_[4],16)), (int(dis_[5],16))])/1000.0
+            dis = dis+self.calibrate_dis
+            print(dis) # meter
+
+
+
+        # data = str(rx_1).split(' ')
         # data = rx_1.split(' ')
         # print('Data:', data)
         print()
         # print('---Time---: ', duration)
         # print('data: ', data)
-        d0, d1, d2, d3 = data[2].split(',')[0], data[3].split(
-            ',')[0], data[4].split(',')[0], data[5].split(',')[1]
-        dis = [int(d0)/1000, int(d1)/1000, int(d2)/1000, int(d3)/1000]
+        # d0, d1, d2, d3 = data[2].split(',')[0], data[3].split(
+        #     ',')[0], data[4].split(',')[0], data[5].split(',')[1]
+        # dis = [int(d0)/1000, int(d1)/1000, int(d2)/1000, int(d3)/1000]
         # print('dis:',dis)
 
         # d0, d1, d2, d3 = int(data[2], 16), int(
@@ -178,6 +188,7 @@ class UWBSimulate_enuGPS(UWBSimulate):
 if __name__ == '__main__':
     uwbmanager = UWBSimulate(os.path.dirname(
         __file__)+'/uwbData/UWB_dis_18_49_17.json')
+    print(uwbmanager)
     uwbmanager.start()
     while True:
         time.sleep(1.)

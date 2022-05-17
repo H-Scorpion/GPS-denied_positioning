@@ -1,7 +1,7 @@
 import collections
 import time
 import threading
-from test import test
+from backup.check_packet_attribute import test
 # def count():
 #     c = 0
 #     def add():

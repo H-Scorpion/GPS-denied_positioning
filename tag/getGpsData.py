@@ -28,6 +28,7 @@ def my_onUBX(obj):
     all_recv.append(
         {'time': duration, 'obj': obj, 'timestamp': datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}
     )
+    all_recv_obj.append(obj)
 
 
 def my_onUBXError(msgClass, msgId, errMsg):
@@ -46,6 +47,7 @@ if __name__ == '__main__':
 
     timestamp_start = time.time()
     all_recv = []
+    all_recv_obj = []
     manager.start()
 
     try:
@@ -56,3 +58,4 @@ if __name__ == '__main__':
     finally:
         manager.shutdown()
         joblib.dump(all_recv, filename + '.pkl')
+        joblib.dump(all_recv_obj, filename + '_pure_obj.pkl')
