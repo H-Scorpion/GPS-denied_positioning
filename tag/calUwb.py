@@ -174,6 +174,8 @@ class UWBSimulate():
 
 
 class UWBSimulate_enuGPS(UWBSimulate):
+    # In UWBSimulate_enuGPS we use key-in enu positions, 
+    # not real enu transformed from GPS.
     def __init__(self, offsetQ, filename, anchor_gps,anchor_enu):
         super().__init__(offsetQ, filename, anchor_gps)
         self.anchorPosition_enu = anchor_enu

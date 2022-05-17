@@ -36,7 +36,6 @@ relPos.append((0, 0, 0))
 #               (25.019144299999997, 121.54208469999999, 0.0131656), (25.019026099999998, 121.5423699, 0.0106915)]
 # anchor_gps = [(25.01941, 121.54243, 1.3), (25.01941, 121.54236, 1.3),
 #               (25.01915, 121.54237, 1.3), (25.01915, 121.54244, 1.3)]
-# anchor_enu = [(0, 0, 0), (-6, 0, 0), (-6, -29, 0), (0, -29, 0)]
 
 # EE2 UWB exp ==========
 anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832), 
@@ -45,8 +44,6 @@ anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832),
             (25.018715700762662, 121.5414854841125, 3.000000259884392)]
 # anchor_gps = [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)]
 
-anc_gps_q = anchor_gps_2_anc_gps_q(
-    copy.deepcopy(anchor_gps))  # q stores ubx obj
 
 
 def calRealPos(offset, pvt_obj):
@@ -72,29 +69,58 @@ def sendObj2FC(obj, ser):
 if __name__ == '__main__':
     # If you want to run with fix GPS, just initialize 'anchor_gps'
     # No need to run readFixGps
+    # ===== Read Port Data =====
     with open("connection_data.json",'r') as f:
         connection_data = json.load(f)[0]
         serCom2FC = connection_data['fc_ttl_com']
         tag_com = connection_data['tag_com']
-
-    isSending2FC = True
-    tagPosData = []
+        
+    # ===== determine whether we send the data to FC =====        
+    isSending2FC = True   # set isSending2FC = False to debug without plugging usb_ttl wire
+    
+    # ===== recording dada initialized =====
+    save_position_result = False
+    tagPosData = [] # store the positioning result with the timestamp
+    
+    # ===== serial initializer =====
     if isSending2FC:
         ser = serial.Serial(serCom2FC, 230400, timeout=None) #imprtant! 230400
-
+        
+    # ===== Anchor pos initialize =====
+    anchor_enu = [(0, 0, 0), (-6, 0, 0), (-6, -29, 0), (0, -29, 0)]
+    anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832), 
+                (25.018740399874826, 121.5414674130481, 3.000000590359914), 
+                (25.018740399873735, 121.54148548411611, 3.000000849311539), 
+                (25.018715700762662, 121.5414854841125, 3.000000259884392)]
+    
+    anc_gps_q = anchor_gps_2_anc_gps_q(       # from gps list to ubx obj list
+        copy.deepcopy(anchor_gps))            # q stores ubx obj
+    
+    # ===== print initialzed anchor gps data =====
     print('initial data:')
     print('anchor_gps:', anchor_gps)
     print('-------------------------------')
     # print('anc_gps_q:', anc_gps_q)
+    
+    # ===== mqtt gps pos communication (for multi drone): not yet finished =====
     # th_gps = threading.Thread(
     #     target=mqtt_readGps, args=[anc_gps_q], daemon=True)
     # th_gps.start()
-    # uwbManager = UWBSimulate_enuGPS(relPos, os.path.join(os.path.dirname(
-    #     __file__), './uwbData/GPSDe_UWB_dis_robot.json'), anchor_gps,anchor_enu)
-    uwbManager = UWBHardware(relPos, tag_com, anc_gps_q)
+    
+    # ===== set Mode (use recorded uwb data / real time uwb)=====
+    uwb_recv_mode = 'simulate'
+    # uwb_recv_mode = 'hw'
+    if uwb_recv_mode == 'hw':
+        uwbManager = UWBHardware(relPos, tag_com, anc_gps_q)
+    if uwb_recv_mode == 'simulate':         
+        uwbManager = UWBSimulate_enuGPS(relPos, os.path.join(os.path.dirname(
+            __file__), './uwbData/GPSDe_UWB_dis_robot.json'), anchor_gps,anchor_enu)
+        
+    # ===== initialize uwbManager =====
     uwbManager.start()
     time.sleep(1)
 
+    # ===== Time initialize =====
     start_time = time.time()
     last_time = time.time()
 
@@ -104,7 +130,7 @@ if __name__ == '__main__':
             if t - last_time > 0.15:
                 print(t - last_time)
                 last_time = t
-                duration = t - start_time
+                duration = t - start_time  # duration: time elapse from start_time to now
 
                 ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
                 # print('a0 position:', objGetGps(ref_pvt_obj))
@@ -112,9 +138,9 @@ if __name__ == '__main__':
                 offset = relPos[0]
                 # print(duration, ref_pvt_obj, offset)
                 print('offset:', offset)
-                real_pos_obj = calRealPos(offset, ref_pvt_obj)
-                # print('Tag position:', 'lat:', real_pos_obj.lat*10**-7, 'lon:',
-                #       real_pos_obj.lon*10**-7, 'height:', real_pos_obj.height*10**-7)
+                real_pos_obj = calRealPos(offset, ref_pvt_obj) 
+                # when we know the offest from the reference point and the reference point pos itself,
+                # we know the real position
                 print('Tag position:', objGetGps(real_pos_obj))
                 tagPosData.append([time.time(), real_pos_obj, offset])
                 # print(anc_gps_q)
@@ -126,5 +152,8 @@ if __name__ == '__main__':
                 time.sleep(0.01)
     except KeyboardInterrupt:
         uwbManager.stop()
-    # filename = f'tagPosData_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}.pkl'
-    # joblib.dump(tagPosData, filename)
+    finally:
+        # ===== Save positioning result =====
+        if save_position_result == True:            
+            filename = f'tagPosData_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}.pkl'
+            joblib.dump(tagPosData, filename)
