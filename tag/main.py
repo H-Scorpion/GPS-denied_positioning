@@ -22,10 +22,6 @@ from calUwb import UWBHardware
 from calUwb import UWBSimulate_enuGPS
 
 
-relPos = collections.deque(maxlen=1)  # [(e,n,u)]
-anc_gps_q = collections.deque(maxlen=1)
-
-relPos.append((0, 0, 0))
 
 # (lat, lon, heith)
 # anchor_gps = [(25.02097, 121.54332, 0), (25.02208, 121.5346, 0), (
@@ -62,7 +58,7 @@ def calRealPos(offset, pvt_obj):
 
 
 def sendObj2FC(obj, ser):
-    serialized = real_pos_obj.serialize()
+    serialized = obj.serialize()
     ser.write(serialized)
 
 
@@ -75,8 +71,15 @@ if __name__ == '__main__':
         serCom2FC = connection_data['fc_ttl_com']
         tag_com = connection_data['tag_com']
         
+    # ===== Load ubx obj =====
+    templatePath = os.path.join(os.path.dirname(__file__), './template')
+    hw_obj = joblib.load(os.path.join(templatePath , 'MON-HW_template.pkl'))
+    hw2_obj = joblib.load(os.path.join(templatePath , 'MON-HW2_template.pkl'))
+    dop_obj = joblib.load(os.path.join(templatePath , 'NAV-DOP_template.pkl'))
+    timegps_obj = joblib.load(os.path.join(templatePath , 'NAV-TIMEGPS_template.pkl'))
+    
     # ===== determine whether we send the data to FC =====        
-    isSending2FC = True   # set isSending2FC = False to debug without plugging usb_ttl wire
+    isSending2FC = False   # set isSending2FC = False to debug without plugging usb_ttl wire
     
     # ===== recording dada initialized =====
     save_position_result = False
@@ -107,6 +110,15 @@ if __name__ == '__main__':
     #     target=mqtt_readGps, args=[anc_gps_q], daemon=True)
     # th_gps.start()
     
+    # ===== initialize position containers (global)=====    
+    # [(e,n,u)] # tag relitive position to anchor 0
+    # tag relative position queue that will be changed by uwbManager
+    relPos = collections.deque(maxlen=1)  
+    # anc_gps_q = collections.deque(maxlen=1) # Only used when anchors are also moving 
+    relPos.append((0, 0, 0))
+
+
+    
     # ===== set Mode (use recorded uwb data / real time uwb)=====
     uwb_recv_mode = 'simulate'
     # uwb_recv_mode = 'hw'
@@ -123,31 +135,59 @@ if __name__ == '__main__':
     # ===== Time initialize =====
     start_time = time.time()
     last_time = time.time()
+    
+    # ===== packet sending state =====
+    packet_sending_state = 0 # Alternation of NAV-PVT and NAV-DOP
+    # packet_sending_state = 1 # Sending timegps after 5 PVT/DOP
+    # packet_sending_state = 2 # Sending HW/HW2 after 5 timegps
 
     try:
+        pvt_dop_count = 0
+        timegps_count = 0
         while True:
             t = time.time()
-            if t - last_time > 0.15:
+            if t - last_time > 1:
                 print(t - last_time)
                 last_time = t
                 duration = t - start_time  # duration: time elapse from start_time to now
-
-                ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
-                # print('a0 position:', objGetGps(ref_pvt_obj))
-                # print('anchor_gps:', anchor_gps)
-                offset = relPos[0]
-                # print(duration, ref_pvt_obj, offset)
-                print('offset:', offset)
-                real_pos_obj = calRealPos(offset, ref_pvt_obj) 
-                # when we know the offest from the reference point and the reference point pos itself,
-                # we know the real position
-                print('Tag position:', objGetGps(real_pos_obj))
-                tagPosData.append([time.time(), real_pos_obj, offset])
-                # print(anc_gps_q)
-                # calc_position(lon, lat, d0, d1, d2, d3)
-                if isSending2FC:
-                    sendObj2FC(real_pos_obj, ser)
-
+                # ===== FSM =====
+                if packet_sending_state == 0 :
+                    if pvt_dop_count < 5:
+                        ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
+                        offset = relPos[0]
+                        print('offset:', offset)
+                        real_pos_obj = calRealPos(offset, ref_pvt_obj) 
+                        print('Tag position:', objGetGps(real_pos_obj))
+                        tagPosData.append([time.time(), real_pos_obj, offset])                    
+                        pvt_dop_count = pvt_dop_count + 1
+                        print(real_pos_obj)
+                        print(dop_obj)
+                        print(pvt_dop_count)
+                        if isSending2FC:
+                            sendObj2FC(real_pos_obj, ser)
+                            time.sleep(0.05)
+                            sendObj2FC(dop_obj, ser)
+                    else:                        
+                        pvt_dop_count = 0
+                        packet_sending_state = 1
+                if packet_sending_state == 1:
+                    if timegps_count < 5:
+                        print(timegps_obj)
+                        if isSending2FC:
+                            sendObj2FC(timegps_obj, ser)
+                        timegps_count = timegps_count + 1
+                        packet_sending_state = 0
+                    if timegps_count == 5:
+                        timegps_count = 0
+                        packet_sending_state = 2
+                        
+                if packet_sending_state == 2:
+                    print(hw_obj)
+                    print(hw2_obj)
+                    if isSending2FC:
+                        sendObj2FC(hw_obj,ser)
+                        sendObj2FC(hw2_obj,ser)
+                    packet_sending_state = 0
             else:
                 time.sleep(0.01)
     except KeyboardInterrupt:
