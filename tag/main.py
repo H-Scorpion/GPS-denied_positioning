@@ -21,7 +21,7 @@ from calUwb import UWBSimulate
 from calUwb import UWBHardware
 from calUwb import UWBSimulate_enuGPS
 
-
+from create_teamplate import *
 
 # (lat, lon, heith)
 # anchor_gps = [(25.02097, 121.54332, 0), (25.02208, 121.5346, 0), (
@@ -73,13 +73,18 @@ if __name__ == '__main__':
         
     # ===== Load ubx obj =====
     templatePath = os.path.join(os.path.dirname(__file__), './template')
-    hw_obj = joblib.load(os.path.join(templatePath , 'MON-HW_template.pkl'))
-    hw2_obj = joblib.load(os.path.join(templatePath , 'MON-HW2_template.pkl'))
-    dop_obj = joblib.load(os.path.join(templatePath , 'NAV-DOP_template.pkl'))
-    timegps_obj = joblib.load(os.path.join(templatePath , 'NAV-TIMEGPS_template.pkl'))
-    
+    # hw_obj = joblib.load(os.path.join(templatePath , 'MON-HW_template.pkl'))
+    # hw2_obj = joblib.load(os.path.join(templatePath , 'MON-HW2_template.pkl'))
+    # dop_obj = joblib.load(os.path.join(templatePath , 'NAV-DOP_template.pkl'))
+    # timegps_obj = joblib.load(os.path.join(templatePath , 'NAV-TIMEGPS_template.pkl'))
+    hw_obj = msg_MON_HW
+    hw2_obj = msg_MON_HW2    
+    dop_obj = msg_NAV_DOP
+    timegps_obj = msg_NAV_TIMEGPS
+
+
     # ===== determine whether we send the data to FC =====        
-    isSending2FC = False   # set isSending2FC = False to debug without plugging usb_ttl wire
+    isSending2FC = True   # set isSending2FC = False to debug without plugging usb_ttl wire
     
     # ===== recording dada initialized =====
     save_position_result = False
@@ -146,50 +151,57 @@ if __name__ == '__main__':
         timegps_count = 0
         while True:
             t = time.time()
-            if t - last_time > 1:
-                print(t - last_time)
-                last_time = t
-                duration = t - start_time  # duration: time elapse from start_time to now
+            # if t - last_time > 1:
+            #     print(t - last_time)
+            #     last_time = t
+            #     duration = t - start_time  # duration: time elapse from start_time to now
                 # ===== FSM =====
-                if packet_sending_state == 0 :
-                    if pvt_dop_count < 5:
-                        ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
-                        offset = relPos[0]
-                        print('offset:', offset)
-                        real_pos_obj = calRealPos(offset, ref_pvt_obj) 
-                        print('Tag position:', objGetGps(real_pos_obj))
-                        tagPosData.append([time.time(), real_pos_obj, offset])                    
-                        pvt_dop_count = pvt_dop_count + 1
-                        print(real_pos_obj)
-                        print(dop_obj)
-                        print(pvt_dop_count)
-                        if isSending2FC:
-                            sendObj2FC(real_pos_obj, ser)
-                            time.sleep(0.05)
-                            sendObj2FC(dop_obj, ser)
-                    else:                        
-                        pvt_dop_count = 0
-                        packet_sending_state = 1
-                if packet_sending_state == 1:
-                    if timegps_count < 5:
-                        print(timegps_obj)
-                        if isSending2FC:
-                            sendObj2FC(timegps_obj, ser)
-                        timegps_count = timegps_count + 1
-                        packet_sending_state = 0
-                    if timegps_count == 5:
-                        timegps_count = 0
-                        packet_sending_state = 2
-                        
-                if packet_sending_state == 2:
-                    print(hw_obj)
-                    print(hw2_obj)
+            if packet_sending_state == 0 :
+                if pvt_dop_count < 5:
+                    ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
+                    offset = relPos[0]
+                    # print('offset:', offset)
+                    real_pos_obj = calRealPos(offset, ref_pvt_obj) 
+                    # print('Tag position:', objGetGps(real_pos_obj))
+                    tagPosData.append([time.time(), real_pos_obj, offset])                    
+                    pvt_dop_count = pvt_dop_count + 1
+                    print(msg_NAV_PVT.identity)
+                    print(dop_obj)
+                    # print(pvt_dop_count)
                     if isSending2FC:
-                        sendObj2FC(hw_obj,ser)
-                        sendObj2FC(hw2_obj,ser)
+                        time.sleep(0.18)
+                        # sendObj2FC(real_pos_obj, ser)
+                        sendObj2FC(msg_NAV_PVT, ser)
+                        time.sleep(0.002)
+                        sendObj2FC(dop_obj, ser)
+                else:                        
+                    pvt_dop_count = 0
+                    packet_sending_state = 1
+            elif packet_sending_state == 1:
+                if timegps_count < 5:
+                    print(timegps_obj)
+                    if isSending2FC:
+                        time.sleep(0.0471)
+                        sendObj2FC(timegps_obj, ser)
+                        pass
+                    timegps_count = timegps_count + 1
                     packet_sending_state = 0
-            else:
-                time.sleep(0.01)
+                if timegps_count == 5:
+                    timegps_count = 0
+                    packet_sending_state = 2
+                    
+            elif packet_sending_state == 2:
+                print(hw_obj)
+                print(hw2_obj)
+                if isSending2FC:
+                    time.sleep(0.008)
+                    sendObj2FC(hw_obj,ser)
+                    time.sleep(0.13)
+                    sendObj2FC(hw2_obj,ser)
+                    pass
+                packet_sending_state = 0
+            # else:
+            #     time.sleep(0.01)
     except KeyboardInterrupt:
         uwbManager.stop()
     finally:
