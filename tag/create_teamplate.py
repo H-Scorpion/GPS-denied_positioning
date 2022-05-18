@@ -1,6 +1,8 @@
 from pyubx2 import UBXMessage, GET
 
-msg_NAV_PVT = UBXMessage(0x01, 0x07, GET, 
+
+def create_NAV_PVT (lat, lon, height):
+    NAV_PVT_obj = UBXMessage(0x01, 0x07, GET, 
 					iTOW=196806000, year=2022, month=5, 
 					day=17, hour=6, min=6, second=36, 
 					validDate=1, validTime=1, 
@@ -8,12 +10,30 @@ msg_NAV_PVT = UBXMessage(0x01, 0x07, GET,
 					fixType=3, gnssFixOk=1, difSoln=1, psmState=0, 
 					headVehValid=0, carrSoln=0, confirmedAvai=0, 
 					confirmedDate=0, confirmedTime=0, numSV=18, 
-					lon=121.5415504, lat=25.0187538, height=55280, 
+					lon = lon, lat = lat, height = height,
+					# lon=121.5415504, lat=25.0187538, height=55280, 
 					hMSL=38221, hAcc=3853, vAcc=5546, velN=-105, 
 					velE=33, velD=-132, gSpeed=110, headMot=346.78089, 
 					sAcc=964, headAcc=19.36601, pDOP=2.04, invalidLlh=0, 
 					lastCorrectionAge=0, reserved0=2312952, 
 					headVeh=0.0, magDec=0.0, magAcc=0.0)
+    return NAV_PVT_obj
+
+
+# msg_NAV_PVT = UBXMessage(0x01, 0x07, GET, 
+# 					iTOW=196806000, year=2022, month=5, 
+# 					day=17, hour=6, min=6, second=36, 
+# 					validDate=1, validTime=1, 
+# 					fullyResolved=1, validMag=0, tAcc=10, nano=600130452, 
+# 					fixType=3, gnssFixOk=1, difSoln=1, psmState=0, 
+# 					headVehValid=0, carrSoln=0, confirmedAvai=0, 
+# 					confirmedDate=0, confirmedTime=0, numSV=18, 
+# 					lon=121.5415504, lat=25.0187538, height=55280, 
+# 					hMSL=38221, hAcc=3853, vAcc=5546, velN=-105, 
+# 					velE=33, velD=-132, gSpeed=110, headMot=346.78089, 
+# 					sAcc=964, headAcc=19.36601, pDOP=2.04, invalidLlh=0, 
+# 					lastCorrectionAge=0, reserved0=2312952, 
+# 					headVeh=0.0, magDec=0.0, magAcc=0.0)
 
 msg_NAV_DOP = UBXMessage(0x01, 0x04, GET, 
 					iTOW=196806000, gDOP=2.38, pDOP=2.04, 

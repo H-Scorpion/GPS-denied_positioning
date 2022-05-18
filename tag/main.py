@@ -42,19 +42,30 @@ anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832),
 
 
 
-def calRealPos(offset, pvt_obj):
-    real_pos_obj = pvt_obj  # default
+def calRealPos(offset, pvt_obj, obj_type = 'pyubx2'):
+    if obj_type == 'pyubx2':
+        real_pos_obj = pvt_obj  # default
+        lat, lon, height = pm.enu2geodetic(
+            offset[0], offset[1], offset[2], pvt_obj.lat*10**-7, pvt_obj.lon*10**-7, pvt_obj.height*10**-7)
+        lat = round(lat,7)
+        lon = round(lon,7)
+        height = int(height*10**4)
+        print(lat, lon, height)
+        msg_NAV_PVT = create_NAV_PVT(lat, lon, height)
+        return msg_NAV_PVT
+    else:
+        real_pos_obj = pvt_obj  # default
 
-    real_pos_obj.lat, real_pos_obj.lon, real_pos_obj.height = pm.enu2geodetic(
-        offset[0], offset[1], offset[2], pvt_obj.lat*10**-7, pvt_obj.lon*10**-7, pvt_obj.height*10**-7)
+        real_pos_obj.lat, real_pos_obj.lon, real_pos_obj.height = pm.enu2geodetic(
+            offset[0], offset[1], offset[2], pvt_obj.lat*10**-7, pvt_obj.lon*10**-7, pvt_obj.height*10**-7)
 
-    real_pos_obj.lat = int(real_pos_obj.lat*10**7)
-    real_pos_obj.lon = int(real_pos_obj.lon*10**7)
-    real_pos_obj.height = int(real_pos_obj.height*10**7)
-    real_pos_obj.pDOP = 1
-    real_pos_obj.numSV = 15
-    
-    return real_pos_obj
+        real_pos_obj.lat = int(real_pos_obj.lat*10**7)
+        real_pos_obj.lon = int(real_pos_obj.lon*10**7)
+        real_pos_obj.height = int(real_pos_obj.height*10**7)
+        real_pos_obj.pDOP = 1
+        real_pos_obj.numSV = 15
+        
+        return real_pos_obj
 
 
 def sendObj2FC(obj, ser):
@@ -84,7 +95,7 @@ if __name__ == '__main__':
 
 
     # ===== determine whether we send the data to FC =====        
-    isSending2FC = True   # set isSending2FC = False to debug without plugging usb_ttl wire
+    isSending2FC = False   # set isSending2FC = False to debug without plugging usb_ttl wire
     
     # ===== recording dada initialized =====
     save_position_result = False
@@ -96,10 +107,13 @@ if __name__ == '__main__':
         
     # ===== Anchor pos initialize =====
     anchor_enu = [(0, 0, 0), (-6, 0, 0), (-6, -29, 0), (0, -29, 0)]
-    anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832), 
-                (25.018740399874826, 121.5414674130481, 3.000000590359914), 
-                (25.018740399873735, 121.54148548411611, 3.000000849311539), 
-                (25.018715700762662, 121.5414854841125, 3.000000259884392)]
+    # anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832), # EE2
+    #             (25.018740399874826, 121.5414674130481, 3.000000590359914), 
+    #             (25.018740399873735, 121.54148548411611, 3.000000849311539), 
+    #             (25.018715700762662, 121.5414854841125, 3.000000259884392)]
+    anchor_gps = [(25.01941, 121.54243, 1.3), (25.01941, 121.54236, 1.3),
+              (25.01915, 121.54237, 1.3), (25.01915, 121.54244, 1.3)]
+    
     
     anc_gps_q = anchor_gps_2_anc_gps_q(       # from gps list to ubx obj list
         copy.deepcopy(anchor_gps))            # q stores ubx obj
@@ -160,13 +174,14 @@ if __name__ == '__main__':
                 if pvt_dop_count < 5:
                     ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
                     offset = relPos[0]
-                    # print('offset:', offset)
-                    real_pos_obj = calRealPos(offset, ref_pvt_obj) 
+                    print('offset:', offset)
+                    msg_NAV_PVT = calRealPos(offset,ref_pvt_obj)
+                    # real_pos_obj = calRealPos(offset, ref_pvt_obj) 
                     # print('Tag position:', objGetGps(real_pos_obj))
-                    tagPosData.append([time.time(), real_pos_obj, offset])                    
+                    # tagPosData.append([time.time(), real_pos_obj, offset])                    
                     pvt_dop_count = pvt_dop_count + 1
-                    print(msg_NAV_PVT.identity)
-                    print(dop_obj)
+                    print(msg_NAV_PVT)
+                    # print(dop_obj)
                     # print(pvt_dop_count)
                     if isSending2FC:
                         time.sleep(0.18)
@@ -191,8 +206,8 @@ if __name__ == '__main__':
                     packet_sending_state = 2
                     
             elif packet_sending_state == 2:
-                print(hw_obj)
-                print(hw2_obj)
+                # print(hw_obj)
+                # print(hw2_obj)
                 if isSending2FC:
                     time.sleep(0.008)
                     sendObj2FC(hw_obj,ser)
