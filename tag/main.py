@@ -67,6 +67,10 @@ if __name__ == '__main__':
         connection_data = json.load(f)[0]
         serCom2FC = connection_data['fc_ttl_com']
         tag_com = connection_data['tag_com']
+        anchor_gps = connection_data['anchor_gps'][0]
+        uwb_recv_mode = connection_data['uwb_recv_mode']
+        isSending2FC = connection_data['isSending2FC']
+        
         
     # ===== Load ubx obj =====
     templatePath = os.path.join(os.path.dirname(__file__), './template')
@@ -81,10 +85,10 @@ if __name__ == '__main__':
 
 
     # ===== determine whether we send the data to FC =====        
-    isSending2FC = True   # set isSending2FC = False to debug without plugging usb_ttl wire
+    # isSending2FC = True   # set isSending2FC = False to debug without plugging usb_ttl wire
     
     # ===== recording dada initialized =====
-    save_position_result = False
+    # save_position_result = False
     tagPosData = [] # store the positioning result with the timestamp
     
     # ===== serial initializer =====
@@ -94,10 +98,10 @@ if __name__ == '__main__':
     # ===== Anchor pos initialize =====
     # gps: (lat, lon, heith)
     # EE2 experiment =====
-    anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832), # EE2
-                (25.018740399874826, 121.5414674130481, 3.000000590359914), 
-                (25.018740399873735, 121.54148548411611, 3.000000849311539), 
-                (25.018715700762662, 121.5414854841125, 3.000000259884392)]
+    # anchor_gps =[(25.01871570076376, 121.5414674130481, 3.000000000735832), # EE2
+    #             (25.018740399874826, 121.5414674130481, 3.000000590359914), 
+    #             (25.018740399873735, 121.54148548411611, 3.000000849311539), 
+    #             (25.018715700762662, 121.5414854841125, 3.000000259884392)]
     # BL experiment =====
     # anchor_enu = [(0, 0, 0), (-6, 0, 0), (-6, -29, 0), (0, -29, 0)] # Only used when replay (UWBSimulate_enuGPS)
     # anchor_gps = [(25.01941, 121.54243, 1.3), (25.01941, 121.54236, 1.3),
