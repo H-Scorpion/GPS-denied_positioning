@@ -70,6 +70,7 @@ if __name__ == '__main__':
         anchor_gps = connection_data['anchor_gps'][0]
         uwb_recv_mode = connection_data['uwb_recv_mode']
         isSending2FC = connection_data['isSending2FC']
+        save_position_result = connection_data['save_position_result']
         
         
     # ===== Load ubx obj =====
