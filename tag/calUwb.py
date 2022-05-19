@@ -38,7 +38,7 @@ class UWBHardware():
         # self.recordDistanceData = []
 
     def gps2enu_list(self, anchorPosition_gps):
-        print(anchorPosition_gps)
+        # print(anchorPosition_gps)
         anchorPosition_enu = [(0, 0, 0)]
         refPointGps = anchorPosition_gps[0]
         for i in range(1, len(anchorPosition_gps)):
@@ -61,14 +61,14 @@ class UWBHardware():
             dis_ = dec_rx1.split(' ')
             dis = np.array([(int(dis_[2],16)),(int(dis_[3],16)), (int(dis_[4],16)), (int(dis_[5],16))])/1000.0
             dis = dis+self.calibrate_dis
-            print(dis) # meter
+            # print('dis:', dis) # meter
 
 
 
         # data = str(rx_1).split(' ')
         # data = rx_1.split(' ')
         # print('Data:', data)
-        print()
+        # print()
         # print('---Time---: ', duration)
         # print('data: ', data)
         # d0, d1, d2, d3 = data[2].split(',')[0], data[3].split(
@@ -86,7 +86,7 @@ class UWBHardware():
             recv_data_dic)
         self.distanceData = dis
         # print('anchor_gps:', self.anchor_gps)
-        print('distanceData:', self.distanceData)
+        # print('distanceData:', self.distanceData)
         # print('anchorPosition_enu:', self.anchorPosition_enu)
         offset = costfun_method(self.distanceData, self.anchorPosition_enu)
         # print('offset:',offset)
@@ -97,11 +97,12 @@ class UWBHardware():
         fi_num = datetime.now().strftime("%H_%M_%S")
         self.start_time = time.time()
         while self.is_run.is_set():
-            rx_1 = self.ser.readline()
+            if (self.ser.inWaiting() > 0):
+                rx_1 = self.ser.readline()
 
-            if(len(rx_1) >= 20 and 'mc' in str(rx_1)):
-                self.onUwb(rx_1)
-            time.sleep(0.2)
+                if(len(rx_1) >= 20 and 'mc' in str(rx_1)):
+                    self.onUwb(rx_1)
+            # time.sleep(0.2)
 
     def start(self):
         self.is_run.set()
