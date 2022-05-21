@@ -52,16 +52,26 @@ def gps_to_enu(anchor_gps):
 
 
 def enu_to_gps(anchor_enu:list, ref_a0_gps:tuple):
+    """
+    Parameters
+    ----------
+    anchor_enu:list
+
+    ref_a0_gps:tuple
+    ref_a0_gps = (lat, lon, height)
+    
+    Returns
+    -------
+    anchor_gps : list
+    """
     anchor_gps = []
     lat0, lon0,h0 = ref_a0_gps
     for i in range(len(anchor_enu)):
         e,n,u = anchor_enu[i]
         lat,lon,h = pm.enu2geodetic(e, n, u, lat0, lon0, h0)
-        anchor_gps.append((lat,lon,h))
+        anchor_gps.append([lat,lon,h])
     return anchor_gps
 
-def measured_pos_to_enu():
-    pass
 
 if(__name__ == '__main__'):
     # anchor hight is given by enu data
