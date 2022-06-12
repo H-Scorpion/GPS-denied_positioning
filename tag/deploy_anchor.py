@@ -65,16 +65,17 @@ def get_deploy_anchor_gps(deploy_pos,yaw, height, ref_gps):
               [25.018740399879572, 121.54148548412036, 1.5000008494433268], 
               [25.018715700762662, 121.54148548411675, 1.5000002589960404]]
     """
-    enu_pos = rotate_frame(yaw,deploy_pos).tolist()
+    enu_pos = rotate_frame(-1*yaw,deploy_pos).tolist()
     anchor_enu = include_height(enu_pos, height)
     anchor_gps = enu_to_gps(anchor_enu,ref_gps)
     return anchor_gps
 
 if __name__ == '__main__':
-    deploy_pos = [[0, 0], [0, 10], [20, 10], [20, 0]]
-    yaw = 5
-    height = 1.3
-    ref_gps = (25.01871570076376, 121.5414674130481, 0)
+    deploy_pos = [[0, 0], [0, 12.32], [5.63, 12.32], [5.63, 0]] #12.32 5.63
+    yaw = -33.75
+    height = 1.6
+    # ref_gps = (25.01871570076376, 121.5414674130481, 0)
+    ref_gps = (25.0177, 121.54419, 0)
     anchor_gps = get_deploy_anchor_gps(deploy_pos, yaw, height, ref_gps)
     print(anchor_gps)
     # enu_pos = rotate_frame(90,deploy_pos).tolist()
