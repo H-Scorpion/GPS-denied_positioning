@@ -1,6 +1,6 @@
 import numpy as np
 from auxiliary import enu_to_gps
-
+import json
 def rotate_frame(yaw , deploy_pos):
     """
     Parameters
@@ -70,17 +70,38 @@ def get_deploy_anchor_gps(deploy_pos,yaw, height, ref_gps):
     anchor_gps = enu_to_gps(anchor_enu,ref_gps)
     return anchor_gps
 
+
 if __name__ == '__main__':
-    deploy_pos = [[0, 0], [0, 12.32], [5.63, 12.32], [5.63, 0]] #12.32 5.63
-    yaw = -33.75
-    height = 1.6
+    with open('./tag/deploy.json', 'r') as f:
+        deploy_data = json.load(f)[0]
+        W = float(deploy_data['W']) # in meters
+        L = float(deploy_data['L']) # in meters
+        yaw = float(deploy_data['yaw']) # in degrees
+        height = float(deploy_data['height']) # in meters
+        ref_gps = [ float(i) for i in deploy_data['ref_gps']]
+    print(ref_gps)
+    
+    
+    deploy_pos = [[0, 0], [0, W], [L, W], [L, 0]] 
+
     # ref_gps = (25.01871570076376, 121.5414674130481, 0)
-    ref_gps = (25.0177, 121.54419, 0)
+    # ref_gps = (25.0177, 121.54419, 0)
     anchor_gps = get_deploy_anchor_gps(deploy_pos, yaw, height, ref_gps)
     print(anchor_gps)
+    
+    with open("./tag/connection_data.json",'r') as f:
+        connection_data = json.load(f)[0]
+
+
+    connection_data["anchor_gps"] = anchor_gps
+    
+    with open('./tag/connection_data.json', 'w') as f:
+        f.write(json.dumps([connection_data]))
+    
     # enu_pos = rotate_frame(90,deploy_pos).tolist()
     # # print(enu_pos)
     # anchor_enu = include_height(enu_pos, 1.3)
     # anchor_gps = enu_to_gps(anchor_enu,ref_gps)
     # print(anchor_gps)
     # # anchor_gps = enu_to_gps(enu_pos,(25.01871570076376, 121.5414674130481, 3.000000000735832))
+    
