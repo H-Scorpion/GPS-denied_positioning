@@ -94,7 +94,7 @@ def costfun_method(distances_to_anchors, anchor_positions):
     new_tag_pos = np.concatenate(
         (np.delete(np.array(tag_pos), 2), [resbrute] + anc_z_ls_mean))
 
-    return np.around(new_tag_pos, 4)
+    return np.around(new_tag_pos, 8)
 
 
 if __name__ == '__main__':
@@ -106,4 +106,5 @@ if __name__ == '__main__':
     realpos = lsq_method([673, 269, 553, 782],
                              [(0, 0, 0), (-880.1274020054734, 122.98658630120735, -0.06188017960501924), (-990.1884056935132, -499.5511201510228, -0.09647551304698254), (-149.3876144609321, -626.9752475078211, -0.03271644687936259)])
     print(realpos)
+
     
