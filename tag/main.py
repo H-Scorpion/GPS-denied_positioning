@@ -33,8 +33,8 @@ def calRealPos(offset, pvt_obj, obj_type = 'pyubx2'):
         real_pos_obj = pvt_obj  # default
         lat, lon, height = pm.enu2geodetic(
             offset[0], offset[1], offset[2], pvt_obj.lat*10**-7, pvt_obj.lon*10**-7, pvt_obj.height*10**-7)
-        lat = round(lat,7)
-        lon = round(lon,7)
+        lat = round(lat,8)
+        lon = round(lon,8)
         height = int(height*10**4)
         print(lat, lon, height)
         msg_NAV_PVT = create_NAV_PVT(lat, lon, height)
