@@ -167,11 +167,12 @@ if __name__ == '__main__':
                 if pvt_dop_count < 5:
                     ref_pvt_obj = copy.deepcopy(anc_gps_q[0][0])
                     offset = relPos[0]
+                    dis = uwbManager.distanceData
                     print('offset:', offset)
                     msg_NAV_PVT = calRealPos(offset,ref_pvt_obj)
                     # real_pos_obj = calRealPos(offset, ref_pvt_obj) 
                     # print('Tag position:', objGetGps(real_pos_obj))
-                    tagPosData.append([time.time(), msg_NAV_PVT, offset])                    
+                    tagPosData.append([time.time(), dis, offset, msg_NAV_PVT])                    
                     pvt_dop_count = pvt_dop_count + 1
                     # print(msg_NAV_PVT)
                     # print(dop_obj)

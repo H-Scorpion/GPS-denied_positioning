@@ -3,3 +3,4 @@ UBX.log
 tag/__pycache__
 git_token.txt
 .vscode/launch.json
+posioning_venv
