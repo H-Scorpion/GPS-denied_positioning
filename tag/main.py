@@ -138,7 +138,7 @@ if __name__ == '__main__':
         uwbManager = UWBHardware(relPos, tag_com, anc_gps_q)
     if uwb_recv_mode == 'simulate':         
         uwbManager = UWBSimulate_enuGPS(relPos, os.path.join(os.path.dirname(
-            __file__), './uwbData/GPSDe_UWB_dis_robot.json'), anchor_gps,anchor_enu)
+            __file__), './uwbData/GPSDe_UWB_dis_robot.json'), anchor_gps)
         
     # ===== initialize uwbManager =====
     uwbManager.start()
@@ -171,7 +171,7 @@ if __name__ == '__main__':
                     msg_NAV_PVT = calRealPos(offset,ref_pvt_obj)
                     # real_pos_obj = calRealPos(offset, ref_pvt_obj) 
                     # print('Tag position:', objGetGps(real_pos_obj))
-                    # tagPosData.append([time.time(), real_pos_obj, offset])                    
+                    tagPosData.append([time.time(), msg_NAV_PVT, offset])                    
                     pvt_dop_count = pvt_dop_count + 1
                     # print(msg_NAV_PVT)
                     # print(dop_obj)
