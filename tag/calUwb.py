@@ -37,8 +37,9 @@ class UWBHardware():
         self.uwbDataList = []
         self.start_time = time.time()
         # self.calibrate_dis = np.array([-.6, -.6, -.6 ,-.6])
-        self.calibrate_dis = np.array([-0.6, -0.6, -0.6 ,-0.6])
+        self.calibrate_dis = np.array([-0.6, -0.6, -0.6, -0.6])
         # self.recordDistanceData = []
+        self.prev_dis = np.array([.0, .0, .0, .0])
 
     def gps2enu_list(self, anchorPosition_gps):
         # print(anchorPosition_gps)
@@ -60,14 +61,16 @@ class UWBHardware():
         duration = time.time()-self.start_time
 
         dec_rx1 = rx_1.decode('utf-8')
-        if(dec_rx1 != ' ' and dec_rx1.find('mc') >= 0):
+        if (dec_rx1 != ' ' and dec_rx1.find('mc') >= 0):
             dis_ = dec_rx1.split(' ')
-            dis = np.array([(int(dis_[2],16)),(int(dis_[3],16)), (int(dis_[4],16)), (int(dis_[5],16))])/1000.0
+            dis = np.array([(int(dis_[2], 16)), (int(dis_[3], 16)),
+                           (int(dis_[4], 16)), (int(dis_[5], 16))])/1000.0
             dis = dis+self.calibrate_dis
             # print('dis:', dis) # meter
-
-
-
+        for i in range(len(dis)):
+            if dis[i]<0:
+                dis[i] = self.prev_dis[i]
+        self.prev_dis = dis
         # data = str(rx_1).split(' ')
         # data = rx_1.split(' ')
         # print('Data:', data)
@@ -84,18 +87,19 @@ class UWBHardware():
         # dis = [d0, d1, d2, d3]
         distanceQ.append(dis)
         # print('dis:', dis)
-        recv_data_dic = {'time': duration, 'dis': dis,'timestamp': datetime.now().strftime("%Y%m%d-%H%M%S%f")}
+        recv_data_dic = {'time': duration, 'dis': dis,
+                         'timestamp': datetime.now().strftime("%Y%m%d-%H%M%S%f")}
         self.uwbDataList.append(
             recv_data_dic)
         self.distanceData = dis
         # print('anchor_gps:', self.anchor_gps)
         print('distanceData:', self.distanceData)
-        
+
         # print('anchorPosition_enu:', self.anchorPosition_enu)
         offset = lsq_method(self.distanceData, self.anchorPosition_enu)
         # offset = chan_algo(self.distanceData, self.anchorPosition_enu)
         # offset2 = costfun_method(self.distanceData, self.anchorPosition_enu)
-        
+
         #offset[0] = 0
         #offset[1] = 0
         offset[2] = 0
@@ -112,7 +116,7 @@ class UWBHardware():
             if (self.ser.inWaiting() > 0):
                 rx_1 = self.ser.readline()
 
-                if(len(rx_1) >= 20 and 'mc' in str(rx_1)):
+                if (len(rx_1) >= 20 and 'mc' in str(rx_1)):
                     self.onUwb(rx_1)
             # time.sleep(0.2)
 
@@ -123,7 +127,8 @@ class UWBHardware():
     def stop(self):
         self.is_run.clear()
         self.ser.close()
-        filename = os.path.dirname(__file__)+'/uwbData/UWB_dis_' + datetime.now().strftime("%Y%m%d-%H%M%S") + '.json'
+        filename = os.path.dirname(
+            __file__)+'/uwbData/UWB_dis_' + datetime.now().strftime("%Y%m%d-%H%M%S") + '.json'
         with open(filename, 'a') as fout:
             json.dump(self.uwbDataList, fout)
         print('finish dumping ubx json data.')
@@ -187,17 +192,15 @@ class UWBSimulate():
 
 
 class UWBSimulate_enuGPS(UWBSimulate):
-    # In UWBSimulate_enuGPS we use key-in enu positions, 
+    # In UWBSimulate_enuGPS we use key-in enu positions,
     # not real enu transformed from GPS.
-    def __init__(self, offsetQ, filename, anchor_gps,anchor_enu=[[0,0,0],[0,1,0],[1,1,0],[1,0,0]]):
+    def __init__(self, offsetQ, filename, anchor_gps, anchor_enu=[[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]]):
         super().__init__(offsetQ, filename, anchor_gps)
         self.anchorPosition_enu = anchor_enu
 
     def metadata_initialize(self, anchorPosition_gps):
         # self.anchorPosition_enu = self.anchorPosition_enu
         print('UWBSimulate_enuGPS:metadata_initialize')
-
-
 
 
 if __name__ == '__main__':
