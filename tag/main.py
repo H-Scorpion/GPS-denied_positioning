@@ -180,6 +180,8 @@ if __name__ == '__main__':
                         time.sleep(0.18)
                         # sendObj2FC(real_pos_obj, ser)
                         sendObj2FC(msg_NAV_PVT, ser)
+                        print('send pvt packet')
+                        print(msg_NAV_PVT)
                         time.sleep(0.002)
                         sendObj2FC(dop_obj, ser)
                 else:                        
