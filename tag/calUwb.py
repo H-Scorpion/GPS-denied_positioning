@@ -14,7 +14,9 @@ import collections
 from auxiliary import anc_gps_q_2_anchor_gps
 from datetime import datetime
 from distance2Position import costfun_method
-
+from distance2Position import lsq_method
+from distance2Position import my_lsq
+from distance2Position import chan_algo
 distanceQ = collections.deque(maxlen=1)
 
 # class UWBBase():
@@ -34,7 +36,8 @@ class UWBHardware():
         self.offsetQ = offsetQ
         self.uwbDataList = []
         self.start_time = time.time()
-        self.calibrate_dis = np.array([-.6, -.6, -.6 ,-.6])
+        # self.calibrate_dis = np.array([-.6, -.6, -.6 ,-.6])
+        self.calibrate_dis = np.array([-0.6, -0.6, -0.6 ,-0.6])
         # self.recordDistanceData = []
 
     def gps2enu_list(self, anchorPosition_gps):
@@ -86,9 +89,18 @@ class UWBHardware():
             recv_data_dic)
         self.distanceData = dis
         # print('anchor_gps:', self.anchor_gps)
-        # print('distanceData:', self.distanceData)
+        print('distanceData:', self.distanceData)
+        
         # print('anchorPosition_enu:', self.anchorPosition_enu)
-        offset = costfun_method(self.distanceData, self.anchorPosition_enu)
+        offset = lsq_method(self.distanceData, self.anchorPosition_enu)
+        # offset = chan_algo(self.distanceData, self.anchorPosition_enu)
+        # offset2 = costfun_method(self.distanceData, self.anchorPosition_enu)
+        
+        #offset[0] = 0
+        #offset[1] = 0
+        offset[2] = 0
+        print(offset)
+        # print('costfun offset: ',offset2)
         # print('offset:',offset)
         self.offsetQ.append(offset)
         # self.recordDistanceData.append()

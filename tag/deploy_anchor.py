@@ -72,7 +72,7 @@ def get_deploy_anchor_gps(deploy_pos,yaw, height, ref_gps):
 
 
 if __name__ == '__main__':
-    with open('./tag/deploy.json', 'r') as f:
+    with open('./deploy.json', 'r') as f:
         deploy_data = json.load(f)[0]
         W = float(deploy_data['W']) # in meters
         L = float(deploy_data['L']) # in meters
@@ -89,13 +89,15 @@ if __name__ == '__main__':
     anchor_gps = get_deploy_anchor_gps(deploy_pos, yaw, height, ref_gps)
     print(anchor_gps)
     
-    with open("./tag/connection_data.json",'r') as f:
+    with open("./connection_data.json",'r') as f:
         connection_data = json.load(f)[0]
 
+    data = []
+    data.append(anchor_gps)
+    connection_data["anchor_gps"] = data
 
-    connection_data["anchor_gps"] = anchor_gps
     
-    with open('./tag/connection_data.json', 'w') as f:
+    with open('./connection_data.json', 'w') as f:
         f.write(json.dumps([connection_data]))
     
     # enu_pos = rotate_frame(90,deploy_pos).tolist()
